@@ -180,7 +180,7 @@ body:after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;back
 .team-full{display:block;color:var(--muted);font:10px/1.5 var(--mono);max-width:150px;margin-top:5px}
 .event-home-hero .button{background:color-mix(in srgb,var(--cyan) 20%,transparent);border-color:var(--cyan)}
 @media(max-width:700px){.event-home-hero{min-height:0;padding:50px 0 110px}.event-home-hero .home-aside{width:min(100%,420px)}.event-home-hero:before{width:170px;height:170px;top:120px}}
-.theme-spooky .event-home-hero:before{background:url('../assets/spooky-logo.png') center/contain no-repeat;border:0;border-radius:0;box-shadow:none;width:min(55vw,620px);height:min(55vw,620px);top:35px;opacity:.26;mask-image:radial-gradient(circle,#000 38%,#0009 61%,transparent 78%)}
+.theme-spooky .event-home-hero:before{background:url('Spooky2026/spooky-logo.png') center/contain no-repeat;border:0;border-radius:0;box-shadow:none;width:min(55vw,620px);height:min(55vw,620px);top:35px;opacity:.26;mask-image:radial-gradient(circle,#000 38%,#0009 61%,transparent 78%)}
 .theme-spooky .event-home-hero h1{font-family:Georgia,serif;font-weight:800;letter-spacing:-2px;color:#f3f9ef;text-shadow:2px 0 #6cf35a,-2px 0 #273d23,0 0 28px #69ed5b55}
 .theme-spooky .event-host{color:#b7c4b6}
 .theme-spooky .event-home-hero .team-profile{background:#101411e8;border-color:#426a40}
@@ -190,7 +190,7 @@ body:after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;back
 .theme-init .init-home-hero{position:relative}
 .theme-init .init-home-hero h1{color:#e8f6f9;text-shadow:0 0 9px #62bfd088,0 0 30px #62bfd055,0 0 58px #62bfd02e}
 .theme-init .brand-mark{text-shadow:0 0 8px #62bfd088,0 0 22px #62bfd04d}
-.theme-init .init-home-hero:before{content:'';position:absolute;left:50%;top:45px;transform:translateX(-50%);width:min(62vw,600px);height:545px;pointer-events:none;opacity:.58;background:url('../assets/init-circuit.png') center/contain no-repeat;mix-blend-mode:screen;mask-image:radial-gradient(ellipse,#000 35%,#000c 65%,transparent 85%)}
+.theme-init .init-home-hero:before{content:'';position:absolute;left:50%;top:45px;transform:translateX(-50%);width:min(62vw,600px);height:545px;pointer-events:none;opacity:.58;background:url('InIt2026/init-circuit.png') center/contain no-repeat;mix-blend-mode:screen;mask-image:radial-gradient(ellipse,#000 35%,#000c 65%,transparent 85%)}
 .theme-init .init-home-hero:before{filter:drop-shadow(0 0 15px #62bfd070)}
 @media(max-width:700px){.theme-spooky .event-home-hero:before{width:85vw;height:85vw;opacity:.2;top:70px}.hitcon-network{height:500px;opacity:.28}.theme-init .init-home-hero:before{width:90vw;height:82vw;top:40px;opacity:.32}}
 .event-title-sub{color:var(--cyan)}
