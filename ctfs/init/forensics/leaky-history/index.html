@@ -1,0 +1,71 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="InIt CTF event page"><title>leaky history · CTF Archive</title><link rel="stylesheet" href="../../../../assets/style.css"><script src="../../../../assets/app.js" defer></script></head><body class="theme-init"><a class="skip" href="#main">Skip to content</a><header><div class="nav"><a class="brand" href="../../../../ctfs/init/index.html" aria-label="InIt home"><span class="brand-mark"><span>{</span>InIt<span>}</span></span></a><div class="header-crumb"><a href="../../../../index.html">Home</a><i>/</i><a href="../../../../ctfs/init/index.html">InIt</a><i>/</i><a href="../../../../ctfs/init/categories/index.html">Categories</a><i>/</i><a href="../../../../ctfs/init/forensics/index.html">Forensics</a><i>/</i><span>leaky history</span></div><nav aria-label="Main navigation"><div class="language-control"><span class="sr-only">Write up language</span><button id="writeup-language" class="language-toggle" type="button" aria-label="Switch language" aria-pressed="false"><span class="language-current">ENG</span></button></div><a href="../../../../index.html">HOME</a><a href="../../../../ctfs/init/index.html">INIT CTF</a></nav></div></header><main id="main"><div class="reading-layout challenge-layout"><div class="article-column"><section class="challenge-card" id="challenge" aria-labelledby="challenge-title"><div class="challenge-top"><span class="challenge-label">CHALLENGE</span><div class="challenge-meta"><span class="challenge-category forensics">Forensics</span><span class="points">200 <small>PTS</small></span></div></div><h1 id="challenge-title">leaky history</h1><p class="challenge-author"><span class="field-label">AUTHOR</span> Kshitij Raj</p><div class="challenge-description" lang="en" data-challenge-language="en"><p data-sync-block="challenge-paragraph-0">A developer on the Tanvoro deploy team realised they&#39;d committed a secrets file to the tanvoro-deploy repo. In a panic they &quot;cleaned it up&quot; — dropped the commit, scrubbed their tracks. The repo looks spotless now: git log shows nothing out of place.</p><p data-sync-block="challenge-paragraph-1">We recovered a copy of the repository. The secret isn&#39;t in the history anymore... but git rarely throws anything away. Get it back.</p></div><div class="challenge-description" lang="ko" data-challenge-language="ko" hidden><p data-sync-block="challenge-paragraph-0">Tanvoro 배포 팀의 개발자가 `tanvoro-deploy` 저장소에 비밀 파일을 커밋했다는 사실을 알아챘다. 당황한 개발자는 커밋을 기록에서 없애고 흔적을 지웠다. 지금 저장소의 `git log`는 아무 문제도 없어 보인다.</p><p data-sync-block="challenge-paragraph-1">저장소 사본을 확보했다. 비밀은 더 이상 기록에 없지만 Git은 좀처럼 데이터를 버리지 않는다. 그것을 복구하라.</p></div><div class="challenge-files"><span class="field-label">ATTACHMENTS</span><div><button class="file-name attachment-trigger" type="button" data-attachment-slug="leaky-history" data-attachment-file="repo.tar.gz" data-attachment-index="../../../../assets/attachment-trees.json" aria-label="Browse repo.tar.gz file structure">repo.tar.gz</button></div></div><div class="challenge-format"><span class="field-label">FLAG FORMAT</span><code>InIt{...}</code></div></section><section id="write-up" class="writeup-section" aria-labelledby="writeup-title"><h2 id="writeup-title" class="writeup-label">Write Up</h2><article class="prose" lang="en" data-writeup-language="en"><h2 id="en-section-0" data-sync-block="heading-0">Starting from the Challenge</h2><p data-sync-block="paragraph-0">The deleted deployment secret must be recovered from the provided Git repository. The current files no longer contain it, so I examined the repository&#39;s earlier objects. Git stores commits, directory structures, and file contents separately, which can leave a deleted file recoverable until garbage collection removes its objects.</p><h2 id="en-section-1" data-sync-block="heading-1">1. Looking beyond git log</h2><pre><code class="language-bash">git log --oneline --decorate --all --graph
+git reflog show --all
+git show --stat ORIG_HEAD
+</code></pre>
+<p data-sync-block="paragraph-1">The current history showed four normal commits, and the reflog was empty. <code>ORIG_HEAD</code> still pointed to a commit that was unreachable from the current branch. ORIG_HEAD is a reference that preserves HEAD from before certain Git operations.</p><blockquote>
+<p data-sync-block="paragraph-2"><strong>Q:</strong> Could the discarded commit still be found if that reference were missing?</p></blockquote>
+<p data-sync-block="paragraph-3">I inspected every unreachable object.</p><pre><code class="language-bash">git fsck --full --unreachable --no-reflogs
+</code></pre>
+<p data-sync-block="paragraph-4"><code>--unreachable</code> displays objects that cannot be reached from current references, while <code>--no-reflogs</code> excludes reflogs when determining reachability. This revealed commit, tree, and blob objects. It confirmed that cleaning up history does not remove the contents unless garbage collection actually deletes the objects.</p><h2 id="en-section-2" data-sync-block="heading-2">2. Recovering the path and blob</h2><pre><code class="language-bash">git ls-tree -r 6dfa863c4a9a1700c6f09a608761f82ef9c241a2
+git cat-file -p 4d080a754db9fdfdeeefb7c4da53dd2b4b11206a
+</code></pre>
+<p data-sync-block="paragraph-5"><code>ls-tree -r</code> traverses the commit&#39;s directory tree and associates paths with object IDs. The relevant blob was <code>deploy/secrets.env</code>. I then used <code>cat-file -p</code> to read the blob&#39;s original bytes.</p><pre><code class="language-plain">DEPLOY_TOKEN=InIt{d4ngl1ng_c0mm1t_l34k}
+</code></pre>
+<h2 id="en-section-3" data-sync-block="heading-3">3. Finding the same object without ORIG_HEAD</h2><pre><code class="language-python"># solve.py — written for this write-up (excerpt)
+fsck = git(&quot;fsck&quot;, &quot;--full&quot;, &quot;--unreachable&quot;, &quot;--no-reflogs&quot;)
+commits = re.findall(rb&quot;unreachable commit ([0-9a-f]{40})&quot;, fsck)
+
+for commit in commits:
+    for entry in git(&quot;ls-tree&quot;, &quot;-rz&quot;, commit.decode()).split(b&quot;\0&quot;):
+        if not entry:
+            continue
+        metadata, path = entry.split(b&quot;\t&quot;, 1)
+        _, kind, object_id = metadata.split()
+        if kind == b&quot;blob&quot;:
+            content = git(&quot;cat-file&quot;, &quot;blob&quot;, object_id.decode())
+            for flag in re.findall(rb&quot;InIt\{[^{}]+\}&quot;, content):
+                print(path.decode(), flag.decode())
+</code></pre>
+<p data-sync-block="paragraph-6">The script examines the trees and blobs of every commit found by <code>git fsck</code>. It recovered the same file and string without directly specifying <code>ORIG_HEAD</code>. The value calculated from the recovered bytes with <code>git hash-object --stdin</code> also matched the original blob ID, confirming that both the filename and contents were identical.</p><h2 id="en-section-4" data-sync-block="heading-4">Final Flag</h2><pre><code class="language-plain">InIt{d4ngl1ng_c0mm1t_l34k}
+</code></pre>
+<h2 id="en-section-5" data-sync-block="heading-5">Summary</h2><section class="writeup-summary" aria-labelledby="en-section-5"><ul>
+<li><strong>Clue:</strong> <code>ORIG_HEAD</code> still points to the discarded commit.</li>
+<li><strong>Object search:</strong> <code>git fsck</code> also finds the unreachable commit, tree, and blob.</li>
+<li><strong>Recovery:</strong> The commit tree maps <code>deploy/secrets.env</code> to the blob containing the deployment token.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="en-flow-0"><div class="flow-title" id="en-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">repo.tar.gz</span></li><li><span class="flow-node">Inspect Git metadata</span></li><li><span class="flow-node">ORIG_HEAD / git fsck</span></li><li><span class="flow-node">ls-tree discarded commit</span></li><li><span class="flow-node">cat-file secrets.env blob</span></li><li><span class="flow-node">DEPLOY_TOKEN → flag</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Forensics write ups</a></div></article><article class="prose" lang="ko" data-writeup-language="ko" hidden><h2 id="ko-section-0" data-sync-block="heading-0">문제에서 출발하기</h2><p data-sync-block="paragraph-0">제공된 Git 저장소에서 삭제된 배포 비밀을 찾아야 한다. 현재 파일에는 남아 있지 않아 이전 객체를 살펴봤다. Git은 커밋·디렉터리 구조·파일 내용을 따로 저장하므로, 브랜치 기록에서 지운 파일도 garbage collection이 객체를 정리하기 전까지 복구할 수 있다.</p><h2 id="ko-section-1" data-sync-block="heading-1">1. git log 밖의 객체 찾기</h2><pre><code class="language-bash">git log --oneline --decorate --all --graph
+git reflog show --all
+git show --stat ORIG_HEAD
+</code></pre>
+<p data-sync-block="paragraph-1">현재 기록에는 정상 커밋 네 개가 보였고 reflog는 비어 있었다. <code>ORIG_HEAD</code>는 현재 브랜치에서 도달할 수 없는 커밋을 가리켰다. ORIG_HEAD는 일부 Git 작업 직전의 HEAD를 보관하는 참조다.</p><blockquote>
+<p data-sync-block="paragraph-2"><strong>Q:</strong> 이 참조가 없어도 버려진 커밋을 찾을 수 있을까?</p></blockquote>
+<p data-sync-block="paragraph-3">도달할 수 없는 객체를 모두 검사했다.</p><pre><code class="language-bash">git fsck --full --unreachable --no-reflogs
+</code></pre>
+<p data-sync-block="paragraph-4"><code>--unreachable</code>은 현재 참조에서 도달할 수 없는 객체를 표시하고, <code>--no-reflogs</code>는 reflog를 도달 가능성의 기준에서 제외한다. 여기서 commit, tree, blob이 발견됐다. 기록을 정리해도 garbage collection으로 객체를 실제 제거하지 않으면 내용이 남는다는 것을 확인했다.</p><h2 id="ko-section-2" data-sync-block="heading-2">2. 파일 경로와 Blob 복구하기</h2><pre><code class="language-bash">git ls-tree -r 6dfa863c4a9a1700c6f09a608761f82ef9c241a2
+git cat-file -p 4d080a754db9fdfdeeefb7c4da53dd2b4b11206a
+</code></pre>
+<p data-sync-block="paragraph-5"><code>ls-tree -r</code>는 해당 커밋의 디렉터리를 순회해 경로와 객체 ID를 연결한다. 문제의 Blob은 <code>deploy/secrets.env</code>였다. 이어 <code>cat-file -p</code>로 Blob의 원래 바이트를 읽었다.</p><pre><code class="language-plain">DEPLOY_TOKEN=InIt{d4ngl1ng_c0mm1t_l34k}
+</code></pre>
+<h2 id="ko-section-3" data-sync-block="heading-3">3. ORIG_HEAD 없이 같은 객체 찾기</h2><pre><code class="language-python"># solve.py — written for this write-up (excerpt)
+fsck = git(&quot;fsck&quot;, &quot;--full&quot;, &quot;--unreachable&quot;, &quot;--no-reflogs&quot;)
+commits = re.findall(rb&quot;unreachable commit ([0-9a-f]{40})&quot;, fsck)
+
+for commit in commits:
+    for entry in git(&quot;ls-tree&quot;, &quot;-rz&quot;, commit.decode()).split(b&quot;\0&quot;):
+        if not entry:
+            continue
+        metadata, path = entry.split(b&quot;\t&quot;, 1)
+        _, kind, object_id = metadata.split()
+        if kind == b&quot;blob&quot;:
+            content = git(&quot;cat-file&quot;, &quot;blob&quot;, object_id.decode())
+            for flag in re.findall(rb&quot;InIt\{[^{}]+\}&quot;, content):
+                print(path.decode(), flag.decode())
+</code></pre>
+<p data-sync-block="paragraph-6">작성한 스크립트는 <code>git fsck</code>가 찾은 커밋마다 tree와 blob을 조사한다. <code>ORIG_HEAD</code>를 직접 지정하지 않아도 같은 파일과 문자열이 나왔다. 복구한 바이트를 <code>git hash-object --stdin</code>으로 계산한 값도 원래 Blob ID와 같았다. 파일 이름뿐 아니라 내용까지 동일하다는 검증이다.</p><h2 id="ko-section-4" data-sync-block="heading-4">Final Flag</h2><pre><code class="language-plain">InIt{d4ngl1ng_c0mm1t_l34k}
+</code></pre>
+<h2 id="ko-section-5" data-sync-block="heading-5">요약</h2><section class="writeup-summary" aria-labelledby="ko-section-5"><ul>
+<li><strong>단서:</strong> <code>ORIG_HEAD</code>가 기록에서 버린 커밋을 가리킨다.</li>
+<li><strong>객체 검색:</strong> <code>git fsck</code>에서도 도달할 수 없는 commit, tree, blob이 나온다.</li>
+<li><strong>복구:</strong> 커밋 tree에서 <code>deploy/secrets.env</code>의 Blob을 찾아 배포 토큰을 읽는다.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="ko-flow-0"><div class="flow-title" id="ko-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">repo.tar.gz</span></li><li><span class="flow-node">Git 메타데이터 확인</span></li><li><span class="flow-node">ORIG_HEAD / git fsck</span></li><li><span class="flow-node">버려진 커밋 ls-tree</span></li><li><span class="flow-node">secrets.env Blob cat-file</span></li><li><span class="flow-node">DEPLOY_TOKEN → 플래그</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Forensics write ups</a></div></article></section></div><aside class="toc"><span class="eyebrow">ON THIS PAGE</span><a href="#challenge">Challenge</a><a href="#write-up">Write Up</a><a data-toc-language="en" href="#en-section-0">Starting from the Challenge</a><a data-toc-language="en" href="#en-section-1">1. Looking beyond git log</a><a data-toc-language="en" href="#en-section-2">2. Recovering the path and blob</a><a data-toc-language="en" href="#en-section-3">3. Finding the same object without ORIG_HEAD</a><a data-toc-language="en" href="#en-section-4">Final Flag</a><a data-toc-language="en" href="#en-section-5">Summary</a><a data-toc-language="ko" href="#ko-section-0" hidden>문제에서 출발하기</a><a data-toc-language="ko" href="#ko-section-1" hidden>1. git log 밖의 객체 찾기</a><a data-toc-language="ko" href="#ko-section-2" hidden>2. 파일 경로와 Blob 복구하기</a><a data-toc-language="ko" href="#ko-section-3" hidden>3. ORIG_HEAD 없이 같은 객체 찾기</a><a data-toc-language="ko" href="#ko-section-4" hidden>Final Flag</a><a data-toc-language="ko" href="#ko-section-5" hidden>요약</a><a class="toc-back" href="../index.html">← Back to list</a></aside></div></main><footer><span>PERSONAL WRITE UPS</span><span>InIt CTF · 2026</span></footer></body></html>

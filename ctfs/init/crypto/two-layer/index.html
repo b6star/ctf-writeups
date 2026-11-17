@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="InIt CTF event page"><title>Two Layer · CTF Archive</title><link rel="stylesheet" href="../../../../assets/style.css"><script src="../../../../assets/app.js" defer></script></head><body class="theme-init"><a class="skip" href="#main">Skip to content</a><header><div class="nav"><a class="brand" href="../../../../ctfs/init/index.html" aria-label="InIt home"><span class="brand-mark"><span>{</span>InIt<span>}</span></span></a><div class="header-crumb"><a href="../../../../index.html">Home</a><i>/</i><a href="../../../../ctfs/init/index.html">InIt</a><i>/</i><a href="../../../../ctfs/init/categories/index.html">Categories</a><i>/</i><a href="../../../../ctfs/init/crypto/index.html">Crypto</a><i>/</i><span>Two Layer</span></div><nav aria-label="Main navigation"><div class="language-control"><span class="sr-only">Write up language</span><button id="writeup-language" class="language-toggle" type="button" aria-label="Switch language" aria-pressed="false"><span class="language-current">ENG</span></button></div><a href="../../../../index.html">HOME</a><a href="../../../../ctfs/init/index.html">INIT CTF</a></nav></div></header><main id="main"><div class="reading-layout challenge-layout"><div class="article-column"><section class="challenge-card" id="challenge" aria-labelledby="challenge-title"><div class="challenge-top"><span class="challenge-label">CHALLENGE</span><div class="challenge-meta"><span class="challenge-category crypto">Crypto</span><span class="points">100 <small>PTS</small></span></div></div><h1 id="challenge-title">Two Layers</h1><p class="challenge-author"><span class="field-label">AUTHOR</span> Harsh Agarwal</p><div class="challenge-description" lang="en" data-challenge-language="en"><p data-sync-block="challenge-paragraph-0">We intercepted this string from a careless admin. He swore he&#39;d &quot;double-encoded it for safety.&quot; Prove him wrong.</p><p data-sync-block="challenge-paragraph-1">VmFWZ3tlMGdfZ3UzYV9vNjRfMWZfYTBnX2YzcGhlMWdsfQ== Flag format: InIt{...}</p></div><div class="challenge-description" lang="ko" data-challenge-language="ko" hidden><p data-sync-block="challenge-paragraph-0">부주의한 관리자의 문자열을 가로챘다. 그는 &#39;안전을 위해 두 번 인코딩했다&#39;고 장담했다. 그의 주장이 틀렸음을 증명하라.</p><p data-sync-block="challenge-paragraph-1">VmFWZ3tlMGdfZ3UzYV9vNjRfMWZfYTBnX2YzcGhlMWdsfQ== 플래그 형식: InIt{...}</p></div><div class="challenge-format"><span class="field-label">FLAG FORMAT</span><code>InIt{...}</code></div></section><section id="write-up" class="writeup-section" aria-labelledby="writeup-title"><h2 id="writeup-title" class="writeup-label">Write Up</h2><article class="prose" lang="en" data-writeup-language="en"><h2 id="en-section-0" data-sync-block="heading-0">Starting from the Challenge</h2><p data-sync-block="paragraph-0">The admin says he “double-encoded it for safety” and gives us this string:</p><pre><code class="language-plain">VmFWZ3tlMGdfZ3UzYV9vNjRfMWZfYTBnX2YzcGhlMWdsfQ==
+</code></pre>
+<h2 id="en-section-1" data-sync-block="heading-1">1. Why Base64 first?</h2><p data-sync-block="paragraph-1">The string uses letters and digits and ends in <code>==</code>, which looks like Base64 padding. Base64 represents bytes as printable characters. I decoded the string and got:</p><pre><code class="language-plain">VaVg{e0g_gu3a_o64_1f_a0g_f3phe1gl}
+</code></pre>
+<blockquote>
+<p data-sync-block="paragraph-2"><strong>Q:</strong> Why does the result start with <code>VaVg</code>?</p></blockquote>
+<h2 id="en-section-2" data-sync-block="heading-2">2. Why ROT13 next?</h2><p data-sync-block="paragraph-3">The flag format is <code>InIt{...}</code>. ROT13 (Rotation 13) turns <code>VaVg</code> into <code>InIt</code>, so I applied it to the whole decoded string. The digits, underscores, and braces stay as they are.</p><p data-sync-block="paragraph-4">The order follows the text we can see: decode the Base64 string, then run ROT13 on its result.</p><h2 id="en-section-3" data-sync-block="heading-3">3. Checking both steps</h2><pre><code class="language-python"># solve.py — written for this write-up
+import base64
+import codecs
+
+encoded = &quot;VmFWZ3tlMGdfZ3UzYV9vNjRfMWZfYTBnX2YzcGhlMWdsfQ==&quot;
+layer1 = base64.b64decode(encoded).decode()
+flag = codecs.decode(layer1, &quot;rot_13&quot;)
+
+print(layer1)
+print(flag)
+</code></pre>
+<p data-sync-block="paragraph-5">The first line printed is the intermediate string; the second is the flag. Applying ROT13 to the flag and encoding it with Base64 gives back the original input.</p><h2 id="en-section-4" data-sync-block="heading-4">Final Flag</h2><pre><code class="language-plain">InIt{r0t_th3n_b64_1s_n0t_s3cur1ty}
+</code></pre>
+<h2 id="en-section-5" data-sync-block="heading-5">Summary</h2><section class="writeup-summary" aria-labelledby="en-section-5"><ul>
+<li><strong>Base64:</strong> The <code>==</code> ending led to the first decoding step. Its output was <code>VaVg{e0g_gu3a_o64_1f_a0g_f3phe1gl}</code>.</li>
+<li><strong>ROT13:</strong> <code>VaVg</code> became <code>InIt</code>, so I applied ROT13 to the full string.</li>
+<li><strong>Flag:</strong> <code>InIt{r0t_th3n_b64_1s_n0t_s3cur1ty}</code></li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="en-flow-0"><div class="flow-title" id="en-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">Given string</span></li><li><span class="flow-node">Base64 decode</span></li><li><span class="flow-node">VaVg{…}</span></li><li><span class="flow-node">ROT13</span></li><li><span class="flow-node">InIt{r0t_th3n_b64_1s_n0t_s3cur1ty}</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Crypto write ups</a></div></article><article class="prose" lang="ko" data-writeup-language="ko" hidden><h2 id="ko-section-0" data-sync-block="heading-0">문제에서 출발하기</h2><p data-sync-block="paragraph-0">관리자는 문자열을 &#39;double-encoded it for safety.&#39;라고 설명했다. 주어진 문자열은 다음과 같다.</p><pre><code class="language-plain">VmFWZ3tlMGdfZ3UzYV9vNjRfMWZfYTBnX2YzcGhlMWdsfQ==
+</code></pre>
+<h2 id="ko-section-1" data-sync-block="heading-1">1. 왜 Base64부터?</h2><p data-sync-block="paragraph-1">문자열은 영문자와 숫자로 이루어져 있고 끝에 <code>==</code>가 붙어 있다. Base64의 패딩 형태와 같다. Base64는 바이트를 출력 가능한 문자로 표현한다. 문자열을 디코딩하자 다음 값이 나왔다.</p><pre><code class="language-plain">VaVg{e0g_gu3a_o64_1f_a0g_f3phe1gl}
+</code></pre>
+<blockquote>
+<p data-sync-block="paragraph-2"><strong>Q:</strong> 결과가 왜 <code>VaVg</code>로 시작할까?</p></blockquote>
+<h2 id="ko-section-2" data-sync-block="heading-2">2. 왜 ROT13인가?</h2><p data-sync-block="paragraph-3">플래그 형식은 <code>InIt{...}</code>이다. <code>VaVg</code>에 ROT13(Rotation 13)을 적용하면 <code>InIt</code>가 되므로, 디코딩한 문자열 전체에 같은 변환을 적용했다. 숫자와 밑줄, 중괄호는 그대로 남는다.</p><p data-sync-block="paragraph-4">눈앞에 있는 문자열을 Base64로 디코딩하고, 나온 결과에 ROT13을 적용하는 순서다.</p><h2 id="ko-section-3" data-sync-block="heading-3">3. 두 단계 확인하기</h2><pre><code class="language-python"># solve.py — written for this write-up
+import base64
+import codecs
+
+encoded = &quot;VmFWZ3tlMGdfZ3UzYV9vNjRfMWZfYTBnX2YzcGhlMWdsfQ==&quot;
+layer1 = base64.b64decode(encoded).decode()
+flag = codecs.decode(layer1, &quot;rot_13&quot;)
+
+print(layer1)
+print(flag)
+</code></pre>
+<p data-sync-block="paragraph-5">첫 줄에는 중간 문자열이, 둘째 줄에는 플래그가 출력된다. 플래그에 ROT13을 적용한 뒤 Base64로 인코딩하면 처음 입력한 문자열이 다시 나온다.</p><h2 id="ko-section-4" data-sync-block="heading-4">Final Flag</h2><pre><code class="language-plain">InIt{r0t_th3n_b64_1s_n0t_s3cur1ty}
+</code></pre>
+<h2 id="ko-section-5" data-sync-block="heading-5">요약</h2><section class="writeup-summary" aria-labelledby="ko-section-5"><ul>
+<li><strong>Base64:</strong> 끝의 <code>==</code>를 보고 먼저 디코딩했다. 결과는 <code>VaVg{e0g_gu3a_o64_1f_a0g_f3phe1gl}</code>였다.</li>
+<li><strong>ROT13:</strong> <code>VaVg</code>가 <code>InIt</code>로 바뀌는 것을 확인하고 전체 문자열에 ROT13을 적용했다.</li>
+<li><strong>Flag:</strong> <code>InIt{r0t_th3n_b64_1s_n0t_s3cur1ty}</code></li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="ko-flow-0"><div class="flow-title" id="ko-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">주어진 문자열</span></li><li><span class="flow-node">Base64 디코딩</span></li><li><span class="flow-node">VaVg{…}</span></li><li><span class="flow-node">ROT13</span></li><li><span class="flow-node">InIt{r0t_th3n_b64_1s_n0t_s3cur1ty}</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Crypto write ups</a></div></article></section></div><aside class="toc"><span class="eyebrow">ON THIS PAGE</span><a href="#challenge">Challenge</a><a href="#write-up">Write Up</a><a data-toc-language="en" href="#en-section-0">Starting from the Challenge</a><a data-toc-language="en" href="#en-section-1">1. Why Base64 first?</a><a data-toc-language="en" href="#en-section-2">2. Why ROT13 next?</a><a data-toc-language="en" href="#en-section-3">3. Checking both steps</a><a data-toc-language="en" href="#en-section-4">Final Flag</a><a data-toc-language="en" href="#en-section-5">Summary</a><a data-toc-language="ko" href="#ko-section-0" hidden>문제에서 출발하기</a><a data-toc-language="ko" href="#ko-section-1" hidden>1. 왜 Base64부터?</a><a data-toc-language="ko" href="#ko-section-2" hidden>2. 왜 ROT13인가?</a><a data-toc-language="ko" href="#ko-section-3" hidden>3. 두 단계 확인하기</a><a data-toc-language="ko" href="#ko-section-4" hidden>Final Flag</a><a data-toc-language="ko" href="#ko-section-5" hidden>요약</a><a class="toc-back" href="../index.html">← Back to list</a><a class="toc-next" href="../le-chiffre/index.html"><span>Next challenge <b aria-hidden="true">→</b></span><strong>Le Chiffre</strong></a></aside></div></main><footer><span>PERSONAL WRITE UPS</span><span>InIt CTF · 2026</span></footer></body></html>

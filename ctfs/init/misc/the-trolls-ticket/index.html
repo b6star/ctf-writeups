@@ -1,0 +1,117 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="InIt CTF event page"><title>The Troll’s Ticket · CTF Archive</title><link rel="stylesheet" href="../../../../assets/style.css"><script src="../../../../assets/app.js" defer></script></head><body class="theme-init"><a class="skip" href="#main">Skip to content</a><header><div class="nav"><a class="brand" href="../../../../ctfs/init/index.html" aria-label="InIt home"><span class="brand-mark"><span>{</span>InIt<span>}</span></span></a><div class="header-crumb"><a href="../../../../index.html">Home</a><i>/</i><a href="../../../../ctfs/init/index.html">InIt</a><i>/</i><a href="../../../../ctfs/init/categories/index.html">Categories</a><i>/</i><a href="../../../../ctfs/init/misc/index.html">Misc</a><i>/</i><span>The Troll’s Ticket</span></div><nav aria-label="Main navigation"><div class="language-control"><span class="sr-only">Write up language</span><button id="writeup-language" class="language-toggle" type="button" aria-label="Switch language" aria-pressed="false"><span class="language-current">ENG</span></button></div><a href="../../../../index.html">HOME</a><a href="../../../../ctfs/init/index.html">INIT CTF</a></nav></div></header><main id="main"><div class="reading-layout challenge-layout"><div class="article-column"><section class="challenge-card" id="challenge" aria-labelledby="challenge-title"><div class="challenge-top"><span class="challenge-label">CHALLENGE</span><div class="challenge-meta"><span class="challenge-category misc">Misc</span><span class="points">200 <small>PTS</small></span></div></div><h1 id="challenge-title">The Troll&#39;s Ticket</h1><p class="challenge-author"><span class="field-label">AUTHOR</span> pri4cy</p><div class="challenge-description" lang="en" data-challenge-language="en"><p data-sync-block="challenge-paragraph-0">Congratulations on winning the Indian Railways Golden Diamond Tour!</p><p data-sync-block="challenge-paragraph-1">Unfortunately, someone has tampered with your ticket. Your journey passes through Delhi, Mumbai, Chennai, and Kolkata, but the files may not be what they appear to be.</p><p data-sync-block="challenge-paragraph-2">Follow the trail, recover your ticket, and claim your prize.</p></div><div class="challenge-description" lang="ko" data-challenge-language="ko" hidden><p data-sync-block="challenge-paragraph-0">Indian Railways Golden Diamond Tour에 당첨된 것을 축하한다!</p><p data-sync-block="challenge-paragraph-1">누군가 승차권을 조작했다. 여정은 Delhi, Mumbai, Chennai, Kolkata를 지나지만, 파일의 겉모습을 그대로 믿어서는 안 된다.</p><p data-sync-block="challenge-paragraph-2">흔적을 따라 승차권을 복구하고 상품을 받아라.</p></div><div class="challenge-files"><span class="field-label">ATTACHMENTS</span><div><button class="file-name attachment-trigger" type="button" data-attachment-slug="the-trolls-ticket" data-attachment-file="challenge_1.zip" data-attachment-index="../../../../assets/attachment-trees.json" aria-label="Browse challenge_1.zip file structure">challenge_1.zip</button></div></div><div class="challenge-format"><span class="field-label">FLAG FORMAT</span><code>InIt{...}</code></div></section><section id="write-up" class="writeup-section" aria-labelledby="writeup-title"><h2 id="writeup-title" class="writeup-label">Write Up</h2><article class="prose" lang="en" data-writeup-language="en"><h2 id="en-section-0" data-sync-block="heading-0">Starting from the Challenge</h2><p data-sync-block="paragraph-0">Extracting <code>challenge_1.zip</code> produces <code>IRCTC_Tatkal_Hack.pdf</code>, <code>outer_wordlist.txt</code>, and <code>README.txt</code>. I tried opening the PDF first, but it would not open. The README also says &#39;The files left behind may not be what they appear to be.&#39;, so I checked the file signature.</p><pre><code class="language-bash">file IRCTC_Tatkal_Hack.pdf
+</code></pre>
+<p data-sync-block="paragraph-1">Its actual format was an encrypted ZIP archive. I changed the extension to <code>.zip</code>.</p><h2 id="en-section-1" data-sync-block="heading-1">1. Opening the file that only looks like a PDF</h2><p data-sync-block="paragraph-2"><code>outer_wordlist.txt</code> contains one password candidate per line and sits beside the disguised, encrypted ZIP.</p><blockquote>
+<p data-sync-block="paragraph-3"><strong>Q:</strong> Which locked file is this outer password list meant to open?</p></blockquote>
+<p data-sync-block="paragraph-4">At this stage, the disguised ZIP is the only locked file, so I used the list against it.</p>
+<p data-sync-block="paragraph-5">Using Python&#39;s <code>zipfile</code> module, I tried each value from the list as the password. The 62,868th candidate, <code>railwaystationroyaljourney</code>, extracted the archive and produced <code>README.txt</code>, <code>delhi.jpg</code>, and <code>delhi_wordlist.txt</code>.</p><h2 id="en-section-2" data-sync-block="heading-2">2. Following the city images and wordlists</h2><p data-sync-block="paragraph-6">Inside the ZIP, the README, wordlist, and file arrangement matched the previous stage except that the PDF had been replaced by delhi.jpg, so I suspected another archive was hidden inside the file. The city names in delhi.jpg and delhi_wordlist.txt matched, and the README said &#39;Once inside, inspect your files carefully. Appearances can be deceiving.&#39;, so I checked the internal signature. I found a ZIP after the JPEG data and tried the candidates from delhi_wordlist.txt with Python&#39;s zipfile module. It opened with cholebhature and contained delhi.txt, mumbai.jpg, and mumbai_wordlist.txt.</p>
+<p data-sync-block="paragraph-7"><code>delhi.txt</code> said, &#39;The wordlist from this stage belongs to the next journey. Keep following the trail.&#39; I continued extracting the next item with the wordlist provided alongside each extracted image.</p><table>
+<thead>
+<tr>
+<th>Target image</th>
+<th>Candidate list</th>
+<th>Password</th>
+<th>Next image</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>delhi.jpg</code></td>
+<td><code>delhi_wordlist.txt</code></td>
+<td><code>cholebhature</code></td>
+<td><code>mumbai.jpg</code></td>
+</tr>
+<tr>
+<td><code>mumbai.jpg</code></td>
+<td><code>mumbai_wordlist.txt</code></td>
+<td><code>vada_pav</code></td>
+<td><code>chennai.jpg</code></td>
+</tr>
+<tr>
+<td><code>chennai.jpg</code></td>
+<td><code>chennai_wordlist.txt</code></td>
+<td><code>mylapore</code></td>
+<td><code>kolkata.jpg</code></td>
+</tr>
+<tr>
+<td><code>mumbai.txt</code> also instructed, &#39;Look for data beyond its visible contents and identify the archive hidden inside.&#39; I proceeded in the order Delhi → Mumbai → Chennai → Kolkata, extracting the ZIP appended to each image.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h2 id="en-section-3" data-sync-block="heading-3">3. Recovering the final ticket from Kolkata</h2><p data-sync-block="paragraph-8"><code>chennai.txt</code> said, &#39;Inspect the image carefully. The next archive may be hiding beyond the picture itself.&#39; Checking <code>kolkata.jpg</code> showed that this time an encrypted PDF had been appended after the JPEG. I separated the data from the <code>%PDF</code> starting position through the end.</p><pre><code class="language-python"># extract_ticket.py — written for this write-up
+from pathlib import Path
+
+data = Path(&quot;kolkata.jpg&quot;).read_bytes()
+Path(&quot;kolkata.pdf&quot;).write_bytes(data[data.index(b&quot;%PDF&quot;):])
+</code></pre>
+<p data-sync-block="paragraph-9">The PDF password was also found in the provided <code>outer_wordlist.txt</code>: the 56,890th candidate, <code>peacock</code>. Opening the PDF with this value displayed a ticket showing the Delhi → Mumbai → Chennai → Kolkata journey, with the flag written underneath.</p><pre><code class="language-bash"># kolkata.pdf
+Congratulations! You won the giveaway!
+Your flag is:
+InIt{j0urney_4cr0ss_1ndia}
+</code></pre>
+<h2 id="en-section-4" data-sync-block="heading-4">Final Flag</h2><pre><code class="language-plain">InIt{j0urney_4cr0ss_1ndia}
+</code></pre>
+<h2 id="en-section-5" data-sync-block="heading-5">Summary</h2><section class="writeup-summary" aria-labelledby="en-section-5"><ul>
+<li><strong>Outer layer:</strong> <code>IRCTC_Tatkal_Hack.pdf</code> is an encrypted ZIP; its password is found in <code>outer_wordlist.txt</code>.</li>
+<li><strong>Journey:</strong> Each city image has an appended archive, and the accompanying wordlist opens the next stage.</li>
+<li><strong>Ticket:</strong> Extract the PDF appended to <code>kolkata.jpg</code> and open it with <code>peacock</code>.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="en-flow-0"><div class="flow-title" id="en-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">challenge_1.zip</span></li><li><span class="flow-node">IRCTC_Tatkal_Hack.pdf → ZIP</span></li><li><span class="flow-node">railwaystationroyaljourney</span></li><li><span class="flow-node">Delhi → Mumbai → Chennai → Kolkata</span></li><li><span class="flow-node">Extract appended PDF</span></li><li><span class="flow-node">peacock → ticket and flag</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Misc write ups</a></div></article><article class="prose" lang="ko" data-writeup-language="ko" hidden><h2 id="ko-section-0" data-sync-block="heading-0">문제에서 출발하기</h2><p data-sync-block="paragraph-0"><code>challenge_1.zip</code>을 풀면 <code>IRCTC_Tatkal_Hack.pdf</code>, <code>outer_wordlist.txt</code>, <code>README.txt</code>가 나온다. 먼저 PDF를 열어봤는데 열리지 않았다. README에도 &#39;The files left behind may not be what they appear to be.&#39;라는 문구가 있어 파일 시그니처를 확인했다.</p><pre><code class="language-bash">file IRCTC_Tatkal_Hack.pdf
+</code></pre>
+<p data-sync-block="paragraph-1">실제 형식은 암호화된 ZIP이었다. 확장자를 <code>.zip</code>으로 바꿨다.</p><h2 id="ko-section-1" data-sync-block="heading-1">1. PDF처럼 보이는 ZIP 열기</h2><p data-sync-block="paragraph-2"><code>outer_wordlist.txt</code>를 열면 비밀번호 후보가 한 줄에 하나씩 있고, PDF로 위장한 암호화 ZIP과 같은 위치에 있다.</p><blockquote>
+<p data-sync-block="paragraph-3"><strong>Q:</strong> 이 바깥쪽 비밀번호 목록은 어느 잠긴 파일을 열기 위한 것일까?</p></blockquote>
+<p data-sync-block="paragraph-4">이 단계에서 잠긴 파일은 위장한 ZIP 하나뿐이므로 여기에 후보를 넣었다.</p>
+<p data-sync-block="paragraph-5">Python의 <code>zipfile</code> 모듈로 목록의 값을 하나씩 비밀번호로 대입했다. 62,868번째 후보인 <code>railwaystationroyaljourney</code>로 압축이 풀렸고, <code>README.txt</code>, <code>delhi.jpg</code>, <code>delhi_wordlist.txt</code>가 나왔다.</p><h2 id="ko-section-2" data-sync-block="heading-2">2. 도시 이미지와 wordlist 따라가기</h2><p data-sync-block="paragraph-6">압축을 풀고 보니 README와 wordlist가 다시 나왔고, 앞 단계의 PDF 자리에는 <code>delhi.jpg</code>가 있었다. 같은 구조가 반복된 점과 <code>delhi.jpg</code>, <code>delhi_wordlist.txt</code>의 도시 이름이 일치하는 점을 보고 이미지 안에 다음 압축 파일이 있을 것으로 의심했다. README에도 &#39;Once inside, inspect your files carefully. Appearances can be deceiving.&#39;라고 적혀 있어 내부 시그니처를 확인했다. JPEG 데이터 뒤에서 ZIP을 찾았고, Python의 zipfile 모듈로 <code>delhi_wordlist.txt</code>의 후보를 대입하자 <code>cholebhature</code>로 열렸다. 안에는 <code>delhi.txt</code>, <code>mumbai.jpg</code>, <code>mumbai_wordlist.txt</code>가 있었다.</p>
+<p data-sync-block="paragraph-7"><code>delhi.txt</code>에는 &#39;The wordlist from this stage belongs to the next journey. Keep following the trail.&#39;이라고 적혀 있었다. 이후에도 추출된 이미지와 함께 나온 wordlist를 사용해 다음 자료를 꺼냈다.</p><table>
+<thead>
+<tr>
+<th>대상 이미지</th>
+<th>후보 목록</th>
+<th>비밀번호</th>
+<th>다음 이미지</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>delhi.jpg</code></td>
+<td><code>delhi_wordlist.txt</code></td>
+<td><code>cholebhature</code></td>
+<td><code>mumbai.jpg</code></td>
+</tr>
+<tr>
+<td><code>mumbai.jpg</code></td>
+<td><code>mumbai_wordlist.txt</code></td>
+<td><code>vada_pav</code></td>
+<td><code>chennai.jpg</code></td>
+</tr>
+<tr>
+<td><code>chennai.jpg</code></td>
+<td><code>chennai_wordlist.txt</code></td>
+<td><code>mylapore</code></td>
+<td><code>kolkata.jpg</code></td>
+</tr>
+<tr>
+<td><code>mumbai.txt</code>에도 &#39;Look for data beyond its visible contents and identify the archive hidden inside.&#39;라는 안내가 있었다. 각 이미지에 붙은 ZIP을 풀면서 Delhi → Mumbai → Chennai → Kolkata 순서로 진행했다.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h2 id="ko-section-3" data-sync-block="heading-3">3. Kolkata에서 최종 승차권 복구하기</h2><p data-sync-block="paragraph-8"><code>chennai.txt</code>에는 &#39;Inspect the image carefully. The next archive may be hiding beyond the picture itself.&#39;라고 적혀 있었다. <code>kolkata.jpg</code>를 확인하니 이번에는 JPEG 뒤에 암호화된 PDF가 붙어 있었다. <code>%PDF</code> 시작 위치부터 끝까지 분리했다.</p><pre><code class="language-python"># extract_ticket.py — written for this write-up
+from pathlib import Path
+
+data = Path(&quot;kolkata.jpg&quot;).read_bytes()
+Path(&quot;kolkata.pdf&quot;).write_bytes(data[data.index(b&quot;%PDF&quot;):])
+</code></pre>
+<p data-sync-block="paragraph-9">PDF 비밀번호도 제공된 <code>outer_wordlist.txt</code>에서 찾았으며, 56,890번째 후보인 <code>peacock</code>이었다. 이 값으로 PDF를 열자 Delhi → Mumbai → Chennai → Kolkata 여정이 적힌 승차권이 나왔고, 그 아래에 Flag 가 적혀있었다.</p><pre><code class="language-bash"># kolkata.pdf 
+Congratulations! You won the giveaway!
+Your flag is:
+InIt{j0urney_4cr0ss_1ndia}
+</code></pre>
+<h2 id="ko-section-4" data-sync-block="heading-4">Final Flag</h2><pre><code class="language-plain">InIt{j0urney_4cr0ss_1ndia}
+</code></pre>
+<h2 id="ko-section-5" data-sync-block="heading-5">요약</h2><section class="writeup-summary" aria-labelledby="ko-section-5"><ul>
+<li><strong>바깥 단계:</strong> <code>IRCTC_Tatkal_Hack.pdf</code>는 암호화된 ZIP이며 <code>outer_wordlist.txt</code>에서 비밀번호를 찾는다.</li>
+<li><strong>여정:</strong> 도시 이미지마다 archive가 붙어 있고 함께 나온 wordlist로 다음 단계를 연다.</li>
+<li><strong>승차권:</strong> <code>kolkata.jpg</code> 뒤의 PDF를 분리하고 <code>peacock</code>으로 연다.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="ko-flow-0"><div class="flow-title" id="ko-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">challenge_1.zip</span></li><li><span class="flow-node">IRCTC_Tatkal_Hack.pdf → ZIP</span></li><li><span class="flow-node">railwaystationroyaljourney</span></li><li><span class="flow-node">Delhi → Mumbai → Chennai → Kolkata</span></li><li><span class="flow-node">붙은 PDF 분리</span></li><li><span class="flow-node">peacock → 승차권과 플래그</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Misc write ups</a></div></article></section></div><aside class="toc"><span class="eyebrow">ON THIS PAGE</span><a href="#challenge">Challenge</a><a href="#write-up">Write Up</a><a data-toc-language="en" href="#en-section-0">Starting from the Challenge</a><a data-toc-language="en" href="#en-section-1">1. Opening the file that only looks like a PDF</a><a data-toc-language="en" href="#en-section-2">2. Following the city images and wordlists</a><a data-toc-language="en" href="#en-section-3">3. Recovering the final ticket from Kolkata</a><a data-toc-language="en" href="#en-section-4">Final Flag</a><a data-toc-language="en" href="#en-section-5">Summary</a><a data-toc-language="ko" href="#ko-section-0" hidden>문제에서 출발하기</a><a data-toc-language="ko" href="#ko-section-1" hidden>1. PDF처럼 보이는 ZIP 열기</a><a data-toc-language="ko" href="#ko-section-2" hidden>2. 도시 이미지와 wordlist 따라가기</a><a data-toc-language="ko" href="#ko-section-3" hidden>3. Kolkata에서 최종 승차권 복구하기</a><a data-toc-language="ko" href="#ko-section-4" hidden>Final Flag</a><a data-toc-language="ko" href="#ko-section-5" hidden>요약</a><a class="toc-back" href="../index.html">← Back to list</a></aside></div></main><footer><span>PERSONAL WRITE UPS</span><span>InIt CTF · 2026</span></footer></body></html>

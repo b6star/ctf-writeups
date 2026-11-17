@@ -1,0 +1,1029 @@
+{
+  "second": {
+    "handout.zip": [
+      {
+        "path": "ledgerlite",
+        "folder": true
+      },
+      {
+        "path": "ledgerlite/docker-compose.yml",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/db.py",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/app.py",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates",
+        "folder": true
+      },
+      {
+        "path": "ledgerlite/templates/report_new.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/error.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/settings.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/base.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/invoices.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/register.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/report_run.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/reports.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/index.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/login.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/dashboard.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/templates/search.html",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/requirements.txt",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/init",
+        "folder": true
+      },
+      {
+        "path": "ledgerlite/init/02-flag.sh",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/init/01-schema.sql",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/Dockerfile",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/routes",
+        "folder": true
+      },
+      {
+        "path": "ledgerlite/routes/invoices.py",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/routes/reports.py",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/routes/profile.py",
+        "folder": false
+      },
+      {
+        "path": "ledgerlite/routes/auth.py",
+        "folder": false
+      }
+    ]
+  },
+  "cash-now": {
+    "handout.zip": [
+      {
+        "path": "app",
+        "folder": true
+      },
+      {
+        "path": "app/helpers",
+        "folder": true
+      },
+      {
+        "path": "app/helpers/config.js",
+        "folder": false
+      },
+      {
+        "path": "app/helpers/preview-guard.js",
+        "folder": false
+      },
+      {
+        "path": "app/helpers/fetcher.js",
+        "folder": false
+      },
+      {
+        "path": "app/helpers/docstore.js",
+        "folder": false
+      },
+      {
+        "path": "app/helpers/auth.js",
+        "folder": false
+      },
+      {
+        "path": "app/helpers/doccrypto.js",
+        "folder": false
+      },
+      {
+        "path": "app/helpers/guard.js",
+        "folder": false
+      },
+      {
+        "path": "app/server.js",
+        "folder": false
+      },
+      {
+        "path": "app/package.json",
+        "folder": false
+      },
+      {
+        "path": "app/start.sh",
+        "folder": false
+      },
+      {
+        "path": "app/utils",
+        "folder": true
+      },
+      {
+        "path": "app/utils/blocklist.js",
+        "folder": false
+      },
+      {
+        "path": "app/Dockerfile",
+        "folder": false
+      },
+      {
+        "path": "app/public",
+        "folder": true
+      },
+      {
+        "path": "app/public/index.html",
+        "folder": false
+      },
+      {
+        "path": "app/archive-service.js",
+        "folder": false
+      },
+      {
+        "path": "app/routes",
+        "folder": true
+      },
+      {
+        "path": "app/routes/index.js",
+        "folder": false
+      },
+      {
+        "path": "app/routes/auth.js",
+        "folder": false
+      },
+      {
+        "path": "app/routes/avatar.js",
+        "folder": false
+      },
+      {
+        "path": "app/routes/documents.js",
+        "folder": false
+      },
+      {
+        "path": "nginx",
+        "folder": true
+      },
+      {
+        "path": "nginx/default.conf",
+        "folder": false
+      },
+      {
+        "path": "docker-compose.yml",
+        "folder": false
+      }
+    ]
+  },
+  "leaky-history": {
+    "repo.tar.gz": [
+      {
+        "path": "tanvoro-deploy",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/requirements.txt",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/deploy",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/deploy/deploy.sh",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/deploy/.env.example",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/README.md",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/description",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/config",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/pre-applypatch.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/pre-push.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/sendemail-validate.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/fsmonitor-watchman.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/commit-msg.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/post-update.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/update.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/pre-commit.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/pre-rebase.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/prepare-commit-msg.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/push-to-checkout.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/pre-merge-commit.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/pre-receive.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/hooks/applypatch-msg.sample",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/3f",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/3f/bb61a4e18b1e89e2f20b3c217513573190646c",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/da",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/da/390f04d219c65c0a515c0111f1ed58da83d5a5",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/5b",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/5b/d19d39d1a803a2be1d5b241855ebbdd7f391fd",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/8d",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/8d/463cea04a46dffee1cc49c95564754d91be7be",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/46",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/46/b673c1dc55dadc6e7184751aa090cd95b31243",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/68",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/68/c16a962f8fe7ad8bbf6ea69caa069fd8cc4190",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/13",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/13/e088d11afcad79c3aa42bdffa7397c8673a645",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/6d",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/6d/fa863c4a9a1700c6f09a608761f82ef9c241a2",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/ae",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/ae/0bce14299b0c2a5a359439204d45ec0aeaf78f",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/60",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/60/b610554f88a30944108ba3ccaa1a1f8c8bcf24",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/f3",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/f3/b592b8eb3654e0de89e0c4b76c8ed334b85481",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/5d",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/5d/726f152cbfe5057ed5da1732141d32546b1716",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/9c",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/9c/ba4132bdf74e325fb47f6475bead9ceff3b2e1",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/02",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/02/9d6d55544387b4975dc820cbab4a1c08a0e76b",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/dd",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/dd/c4e9b92ac2075c22f9e6244a561dde411b269b",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/10",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/10/2a74cd65214f6134b1edccb878943693ec1f0d",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/b6",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/b6/faca2c05e36fb98f3ccaf70fc208545ad6dc0b",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/58",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/58/dfdaca26e88000b3e4a3d252c0e6690de4a265",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/01",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/01/87aa968bb88d46be00969ca92bf759c5b73a2c",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/61",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/61/260e5911cc1ae0d5162e932e371587eead7d14",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/info",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/pack",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/4d",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/objects/4d/080a754db9fdfdeeefb7c4da53dd2b4b11206a",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/COMMIT_EDITMSG",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/refs",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/refs/heads",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/refs/heads/main",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/refs/tags",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/logs",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/logs/refs",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/logs/refs/heads",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/logs/refs/heads/main",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/logs/HEAD",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/HEAD",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/branches",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/index",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/ORIG_HEAD",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.git/info",
+        "folder": true
+      },
+      {
+        "path": "tanvoro-deploy/.git/info/exclude",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/.gitignore",
+        "folder": false
+      },
+      {
+        "path": "tanvoro-deploy/app.py",
+        "folder": false
+      }
+    ]
+  },
+  "keychain-crumbs": {
+    "capture.zip": [
+      {
+        "path": "capture.pcap",
+        "folder": false
+      }
+    ]
+  },
+  "ec2-dropper": {
+    "incident_ec2.zip": [
+      {
+        "path": "incident_ec2/INCIDENT.txt",
+        "folder": false
+      },
+      {
+        "path": "incident_ec2/agent/vault.bin",
+        "folder": false
+      },
+      {
+        "path": "incident_ec2/agent/vault.py",
+        "folder": false
+      },
+      {
+        "path": "incident_ec2/artifacts/cloud-init-output.log",
+        "folder": false
+      },
+      {
+        "path": "incident_ec2/artifacts/crontab.txt",
+        "folder": false
+      },
+      {
+        "path": "incident_ec2/artifacts/syslog.txt",
+        "folder": false
+      }
+    ]
+  },
+  "locked-notes": {
+    "securenotes_data.tar.gz": [
+      {
+        "path": "logcat.txt",
+        "folder": false
+      },
+      {
+        "path": "com.larkfield.securenotes/cache/image_cache.tmp",
+        "folder": false
+      },
+      {
+        "path": "com.larkfield.securenotes/databases/notes.db",
+        "folder": false
+      },
+      {
+        "path": "com.larkfield.securenotes/files/onboarding_seen",
+        "folder": false
+      },
+      {
+        "path": "com.larkfield.securenotes/shared_prefs/com.larkfield.securenotes_preferences.xml",
+        "folder": false
+      }
+    ]
+  },
+  "deleted-evidence": {
+    "evidence.img": [
+      {
+        "path": "Users",
+        "folder": true
+      },
+      {
+        "path": "Users/j.morris",
+        "folder": true
+      },
+      {
+        "path": "Users/j.morris/Desktop",
+        "folder": true
+      },
+      {
+        "path": "Users/j.morris/Desktop/desktop.ini",
+        "folder": false
+      },
+      {
+        "path": "Users/j.morris/Desktop/todo.txt",
+        "folder": false
+      },
+      {
+        "path": "Users/j.morris/Documents",
+        "folder": true
+      },
+      {
+        "path": "Users/j.morris/Documents/report_q3.txt",
+        "folder": false
+      },
+      {
+        "path": "Users/j.morris/Documents/wifi_backup.txt",
+        "folder": false
+      },
+      {
+        "path": "Users/j.morris/Documents/recovery_code.gz",
+        "folder": false
+      },
+      {
+        "path": "Users/j.morris/Pictures",
+        "folder": true
+      },
+      {
+        "path": "Users/j.morris/Pictures/logo.jpg",
+        "folder": false
+      },
+      {
+        "path": "$AttrDef",
+        "folder": false
+      },
+      {
+        "path": "$BadClus",
+        "folder": false
+      },
+      {
+        "path": "$BadClus:$Bad",
+        "folder": false
+      },
+      {
+        "path": "$Bitmap",
+        "folder": false
+      },
+      {
+        "path": "$Boot",
+        "folder": false
+      },
+      {
+        "path": "$Extend",
+        "folder": true
+      },
+      {
+        "path": "$Extend/$ObjId:$O",
+        "folder": false
+      },
+      {
+        "path": "$Extend/$Quota:$O",
+        "folder": false
+      },
+      {
+        "path": "$Extend/$Quota:$Q",
+        "folder": false
+      },
+      {
+        "path": "$Extend/$Reparse:$R",
+        "folder": false
+      },
+      {
+        "path": "$LogFile",
+        "folder": false
+      },
+      {
+        "path": "$MFT",
+        "folder": false
+      },
+      {
+        "path": "$MFTMirr",
+        "folder": false
+      },
+      {
+        "path": "$Recycle.Bin",
+        "folder": true
+      },
+      {
+        "path": "$Secure:$SDS",
+        "folder": false
+      },
+      {
+        "path": "$Secure:$SDH",
+        "folder": false
+      },
+      {
+        "path": "$Secure:$SII",
+        "folder": false
+      },
+      {
+        "path": "$UpCase",
+        "folder": false
+      },
+      {
+        "path": "$UpCase:$Info",
+        "folder": false
+      },
+      {
+        "path": "$Volume",
+        "folder": false
+      },
+      {
+        "path": "$OrphanFiles",
+        "folder": false
+      },
+      {
+        "path": "$OrphanFiles/OrphanFile-16",
+        "folder": false
+      },
+      {
+        "path": "$OrphanFiles/OrphanFile-17",
+        "folder": false
+      },
+      {
+        "path": "$OrphanFiles/OrphanFile-18",
+        "folder": false
+      },
+      {
+        "path": "$OrphanFiles/OrphanFile-19",
+        "folder": false
+      },
+      {
+        "path": "$OrphanFiles/OrphanFile-20",
+        "folder": false
+      },
+      {
+        "path": "$OrphanFiles/OrphanFile-21",
+        "folder": false
+      },
+      {
+        "path": "$OrphanFiles/OrphanFile-22",
+        "folder": false
+      },
+      {
+        "path": "$OrphanFiles/OrphanFile-23",
+        "folder": false
+      }
+    ]
+  },
+  "where-am-i": {
+    "672046899-c20deb88-78cd-40e4-8ecc-5fde2b832eac.jpg": []
+  },
+  "the-last-announcement": {
+    "Train_Announcement.wav": []
+  },
+  "weird-sound": {
+    "audio.wav": []
+  },
+  "the-trolls-ticket": {
+    "challenge_1.zip": [
+      {
+        "path": "build/IRCTC_Tatkal_Hack.pdf",
+        "folder": false
+      },
+      {
+        "path": "build/outer_wordlist.txt",
+        "folder": false
+      },
+      {
+        "path": "build/README.txt",
+        "folder": false
+      }
+    ]
+  },
+  "camera-lost-found": {
+    "2026-india-trip.7z": [
+      {
+        "path": "2026-india-trip",
+        "folder": true
+      },
+      {
+        "path": "2026-india-trip/IMG_01.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_010.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_011.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_012.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_013.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_014.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_015.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_016.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_017.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_018.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_019.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_02.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_020.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_03.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_04.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_05.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_06.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_07.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_08.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_09.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_25.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_26.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_27.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_28.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_33.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_34.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_35.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_36.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_37.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_38.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_39.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_40.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_41.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_42.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_43.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_44.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_45.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_46.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_47.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_48.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_49.jpg",
+        "folder": false
+      },
+      {
+        "path": "2026-india-trip/IMG_50.jpg",
+        "folder": false
+      }
+    ]
+  },
+  "hidden-giveaway": {
+    "india_tourist_map.png": []
+  },
+  "beepy": {
+    "audio.wav": []
+  },
+  "the-fractured-key": {
+    "intercepted.zip": [
+      {
+        "path": "intercepted.txt",
+        "folder": false
+      },
+      {
+        "path": "key_gen.py",
+        "folder": false
+      }
+    ]
+  },
+  "the-careless-twins": {
+    "careless.zip": [
+      {
+        "path": "encryption.py",
+        "folder": false
+      },
+      {
+        "path": "output.txt",
+        "folder": false
+      }
+    ]
+  }
+}

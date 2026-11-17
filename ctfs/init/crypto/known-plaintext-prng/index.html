@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="InIt CTF event page"><title>Known Plaintext PRNG · CTF Archive</title><link rel="stylesheet" href="../../../../assets/style.css"><script src="../../../../assets/app.js" defer></script></head><body class="theme-init"><a class="skip" href="#main">Skip to content</a><header><div class="nav"><a class="brand" href="../../../../ctfs/init/index.html" aria-label="InIt home"><span class="brand-mark"><span>{</span>InIt<span>}</span></span></a><div class="header-crumb"><a href="../../../../index.html">Home</a><i>/</i><a href="../../../../ctfs/init/index.html">InIt</a><i>/</i><a href="../../../../ctfs/init/categories/index.html">Categories</a><i>/</i><a href="../../../../ctfs/init/crypto/index.html">Crypto</a><i>/</i><span>Known Plaintext PRNG</span></div><nav aria-label="Main navigation"><div class="language-control"><span class="sr-only">Write up language</span><button id="writeup-language" class="language-toggle" type="button" aria-label="Switch language" aria-pressed="false"><span class="language-current">ENG</span></button></div><a href="../../../../index.html">HOME</a><a href="../../../../ctfs/init/index.html">INIT CTF</a></nav></div></header><main id="main"><div class="reading-layout challenge-layout"><div class="article-column"><section class="challenge-card" id="challenge" aria-labelledby="challenge-title"><div class="challenge-top"><span class="challenge-label">CHALLENGE</span><div class="challenge-meta"><span class="challenge-category crypto">Crypto</span><span class="points">200 <small>PTS</small></span></div></div><h1 id="challenge-title">Known Plaintext PRNG</h1><p class="challenge-author"><span class="field-label">AUTHOR</span> OffScript</p><div class="challenge-description" lang="en" data-challenge-language="en"><p data-sync-block="challenge-paragraph-0">A custom stream-like cipher encrypts a flag in four-byte blocks. Each block is XORed with a 32-bit key, and the key is mutated using a predictable linear congruential generator. The starting key was supposed to be secret, but the flag format reveals the first plaintext block.</p></div><div class="challenge-description" lang="ko" data-challenge-language="ko" hidden><p data-sync-block="challenge-paragraph-0">직접 만든 스트림 암호 형태의 암호가 플래그를 4바이트 블록으로 암호화한다. 각 블록은 32비트 키와 XOR되며, 키는 예측 가능한 선형 합동 생성기로 갱신된다. 시작 키는 비밀이어야 했지만, 플래그 형식에서 첫 평문 블록을 알 수 있다.</p></div><div class="challenge-files"><span class="field-label">ATTACHMENTS</span><div><button class="file-name attachment-trigger" type="button" data-attachment-slug="known-plaintext-prng" data-attachment-file="encrypt.zip" data-attachment-index="../../../../assets/attachment-trees.json" aria-label="Browse encrypt.zip file structure">encrypt.zip</button></div></div><div class="challenge-format"><span class="field-label">FLAG FORMAT</span><code>InIt{...}</code></div></section><section id="write-up" class="writeup-section" aria-labelledby="writeup-title"><h2 id="writeup-title" class="writeup-label">Write Up</h2><article class="prose" lang="en" data-writeup-language="en"><h2 id="en-section-0" data-sync-block="heading-0">Starting from the Challenge</h2><p data-sync-block="paragraph-0">The challenge gives us <code>encrypt.py</code> and <code>flag.enc</code>. The flag is encrypted in four-byte blocks: each block is XORed with a 32-bit key, then a fixed formula updates the key for the next block. The flag format gives us the first four plaintext bytes, <code>InIt</code>.</p><h2 id="en-section-1" data-sync-block="heading-1">1. Recovering the initial key from the known prefix</h2><p data-sync-block="paragraph-1">For XOR encryption, <code>C = P XOR K</code>, so <code>C XOR P = K</code>. Applying that relation to the first ciphertext bytes gives:</p><pre><code class="language-text">Ciphertext: d9 7f e1 ea
+InIt:       49 6e 49 74
+Key:        90 11 a8 9e
+</code></pre>
+<blockquote>
+<p data-sync-block="paragraph-2"><strong>Q:</strong> Do four known plaintext bytes reveal only part of the state, or the whole state?</p></blockquote>
+<p data-sync-block="paragraph-3">Each block and each PRNG state is exactly four bytes. The known <code>InIt</code> prefix fills the entire first block, so the XOR result reveals all 32 bits of the initial state.</p><p data-sync-block="paragraph-4">The encryption code uses big-endian byte order, so these key bytes represent <code>0x9011a89e</code>.</p><h2 id="en-section-2" data-sync-block="heading-2">2. One state gives us the rest of the keys</h2><p data-sync-block="paragraph-5">The key update is an LCG (Linear Congruential Generator):</p><pre><code class="language-text">state = (state × 1103515245 + 12345) mod 2^32
+</code></pre>
+<p data-sync-block="paragraph-6">The constants are public, and each state depends only on the previous state. Starting with the recovered key, we can calculate the key for every later block in order.</p><h2 id="en-section-3" data-sync-block="heading-3">3. Decrypting each block</h2><pre><code class="language-python"># solve.py — written for this write-up
+data = open(&quot;flag.enc&quot;, &quot;rb&quot;).read()
+state = int.from_bytes(
+    bytes(c ^ p for c, p in zip(data[:4], b&quot;InIt&quot;)), &quot;big&quot;
+)
+
+plain = bytearray()
+for offset in range(0, len(data), 4):
+    key = state.to_bytes(4, &quot;big&quot;)
+    block = data[offset:offset + 4]
+    plain.extend(c ^ k for c, k in zip(block, key))
+    state = (state * 1103515245 + 12345) &amp; 0xffffffff
+
+print(plain.decode())
+</code></pre>
+<p data-sync-block="paragraph-7">The current state is used first, and the update happens after that block. This follows the encryption order. For the last, shorter block, <code>zip</code> uses only as many key bytes as there are ciphertext bytes.</p><h2 id="en-section-4" data-sync-block="heading-4">Final Flag</h2><pre><code class="language-text">InIt{kn0wn_pl41nt3xt_4tt4cks_4r3_c00l}
+</code></pre>
+<h2 id="en-section-5" data-sync-block="heading-5">Summary</h2><section class="writeup-summary" aria-labelledby="en-section-5"><ul>
+<li><strong>Known plaintext:</strong> <code>InIt</code> covers the entire first block.</li>
+<li><strong>Initial key:</strong> XOR with <code>d9 7f e1 ea</code> gives <code>0x9011a89e</code>.</li>
+<li><strong>Recovery:</strong> Reproduce the LCG states and XOR each block with its key.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="en-flow-0"><div class="flow-title" id="en-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">flag.enc + InIt</span></li><li><span class="flow-node">Recover 0x9011a89e</span></li><li><span class="flow-node">Generate successive LCG states</span></li><li><span class="flow-node">XOR four-byte blocks</span></li><li><span class="flow-node">Read the flag</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Crypto write ups</a></div></article><article class="prose" lang="ko" data-writeup-language="ko" hidden><h2 id="ko-section-0" data-sync-block="heading-0">문제에서 출발하기</h2><p data-sync-block="paragraph-0">문제에는 <code>encrypt.py</code>와 <code>flag.enc</code>가 주어진다. 플래그를 4바이트씩 나눠 32비트 키와 XOR하고, 정해진 식으로 다음 블록의 키를 만든다. 플래그 형식을 통해 첫 4바이트가 <code>InIt</code>라는 것을 알 수 있다.</p><h2 id="ko-section-1" data-sync-block="heading-1">1. 알려진 접두부로 첫 키 복구하기</h2><p data-sync-block="paragraph-1">XOR 암호화에서 <code>C = P XOR K</code>이므로 <code>C XOR P = K</code>다. 이 관계를 첫 암호문 바이트에 적용하면 다음 값이 나온다.</p><pre><code class="language-text">Ciphertext: d9 7f e1 ea
+InIt:       49 6e 49 74
+Key:        90 11 a8 9e
+</code></pre>
+<blockquote>
+<p data-sync-block="paragraph-2"><strong>Q:</strong> 알고 있는 평문 네 바이트로 상태의 일부만 알 수 있을까, 전체를 알 수 있을까?</p></blockquote>
+<p data-sync-block="paragraph-3">암호문 블록과 PRNG 상태가 모두 정확히 4바이트다. <code>InIt</code>가 첫 블록 전체를 채우므로 XOR 결과로 초기 상태 32비트를 모두 얻는다.</p><p data-sync-block="paragraph-4">암호화 코드에서 사용하는 big-endian 순서로 읽으면 이 키는 <code>0x9011a89e</code>다.</p><h2 id="ko-section-2" data-sync-block="heading-2">2. 첫 상태에서 나머지 키 계산하기</h2><p data-sync-block="paragraph-5">키 갱신에는 LCG(Linear Congruential Generator)를 사용한다.</p><pre><code class="language-text">state = (state × 1103515245 + 12345) mod 2^32
+</code></pre>
+<p data-sync-block="paragraph-6">식에 쓰이는 상수는 공개돼 있고, 다음 상태는 이전 상태만으로 정해진다. 따라서 복구한 첫 키에서 출발해 뒤에 이어지는 블록의 키도 순서대로 계산할 수 있다.</p><h2 id="ko-section-3" data-sync-block="heading-3">3. 블록별로 복호화하기</h2><pre><code class="language-python"># solve.py — written for this write-up
+data = open(&quot;flag.enc&quot;, &quot;rb&quot;).read()
+state = int.from_bytes(
+    bytes(c ^ p for c, p in zip(data[:4], b&quot;InIt&quot;)), &quot;big&quot;
+)
+
+plain = bytearray()
+for offset in range(0, len(data), 4):
+    key = state.to_bytes(4, &quot;big&quot;)
+    block = data[offset:offset + 4]
+    plain.extend(c ^ k for c, k in zip(block, key))
+    state = (state * 1103515245 + 12345) &amp; 0xffffffff
+
+print(plain.decode())
+</code></pre>
+<p data-sync-block="paragraph-7">현재 상태로 블록을 복호화한 다음 키를 갱신한다. 암호화할 때와 같은 순서다. 마지막 블록이 4바이트보다 짧으면 <code>zip</code>이 암호문 길이만큼의 키 바이트를 사용한다.</p><h2 id="ko-section-4" data-sync-block="heading-4">Final Flag</h2><pre><code class="language-text">InIt{kn0wn_pl41nt3xt_4tt4cks_4r3_c00l}
+</code></pre>
+<h2 id="ko-section-5" data-sync-block="heading-5">요약</h2><section class="writeup-summary" aria-labelledby="ko-section-5"><ul>
+<li><strong>알려진 평문:</strong> <code>InIt</code>가 첫 블록 전체를 채운다.</li>
+<li><strong>초기 키:</strong> <code>d9 7f e1 ea</code>와 XOR하면 <code>0x9011a89e</code>를 얻는다.</li>
+<li><strong>복원:</strong> LCG 상태를 순서대로 계산해 각 블록을 키와 XOR한다.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="ko-flow-0"><div class="flow-title" id="ko-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">flag.enc + InIt</span></li><li><span class="flow-node">0x9011a89e 복구</span></li><li><span class="flow-node">LCG로 다음 상태 계산</span></li><li><span class="flow-node">4바이트 블록별 XOR</span></li><li><span class="flow-node">플래그 확인</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Crypto write ups</a></div></article></section></div><aside class="toc"><span class="eyebrow">ON THIS PAGE</span><a href="#challenge">Challenge</a><a href="#write-up">Write Up</a><a data-toc-language="en" href="#en-section-0">Starting from the Challenge</a><a data-toc-language="en" href="#en-section-1">1. Recovering the initial key from the known prefix</a><a data-toc-language="en" href="#en-section-2">2. One state gives us the rest of the keys</a><a data-toc-language="en" href="#en-section-3">3. Decrypting each block</a><a data-toc-language="en" href="#en-section-4">Final Flag</a><a data-toc-language="en" href="#en-section-5">Summary</a><a data-toc-language="ko" href="#ko-section-0" hidden>문제에서 출발하기</a><a data-toc-language="ko" href="#ko-section-1" hidden>1. 알려진 접두부로 첫 키 복구하기</a><a data-toc-language="ko" href="#ko-section-2" hidden>2. 첫 상태에서 나머지 키 계산하기</a><a data-toc-language="ko" href="#ko-section-3" hidden>3. 블록별로 복호화하기</a><a data-toc-language="ko" href="#ko-section-4" hidden>Final Flag</a><a data-toc-language="ko" href="#ko-section-5" hidden>요약</a><a class="toc-back" href="../index.html">← Back to list</a><a class="toc-next" href="../the-careless-twins/index.html"><span>Next challenge <b aria-hidden="true">→</b></span><strong>The Careless Twins</strong></a></aside></div></main><footer><span>PERSONAL WRITE UPS</span><span>InIt CTF · 2026</span></footer></body></html>

@@ -1,0 +1,75 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="InIt CTF event page"><title>The Last Announcement · CTF Archive</title><link rel="stylesheet" href="../../../../assets/style.css"><script src="../../../../assets/app.js" defer></script></head><body class="theme-init"><a class="skip" href="#main">Skip to content</a><header><div class="nav"><a class="brand" href="../../../../ctfs/init/index.html" aria-label="InIt home"><span class="brand-mark"><span>{</span>InIt<span>}</span></span></a><div class="header-crumb"><a href="../../../../index.html">Home</a><i>/</i><a href="../../../../ctfs/init/index.html">InIt</a><i>/</i><a href="../../../../ctfs/init/categories/index.html">Categories</a><i>/</i><a href="../../../../ctfs/init/misc/index.html">Misc</a><i>/</i><span>The Last Announcement</span></div><nav aria-label="Main navigation"><div class="language-control"><span class="sr-only">Write up language</span><button id="writeup-language" class="language-toggle" type="button" aria-label="Switch language" aria-pressed="false"><span class="language-current">ENG</span></button></div><a href="../../../../index.html">HOME</a><a href="../../../../ctfs/init/index.html">INIT CTF</a></nav></div></header><main id="main"><div class="reading-layout challenge-layout"><div class="article-column"><section class="challenge-card" id="challenge" aria-labelledby="challenge-title"><div class="challenge-top"><span class="challenge-label">CHALLENGE</span><div class="challenge-meta"><span class="challenge-category misc">Misc</span><span class="points">200 <small>PTS</small></span></div></div><h1 id="challenge-title">The Last Announcement</h1><p class="challenge-author"><span class="field-label">AUTHOR</span> pri4cy</p><div class="challenge-description" lang="en" data-challenge-language="en"><p data-sync-block="challenge-paragraph-0">An Indian Railways announcement recording appears to have been tampered with. Something seems off, but the announcement itself offers no obvious answers.</p><p data-sync-block="challenge-paragraph-1">Investigate the recording and uncover what someone tried to hide.</p></div><div class="challenge-description" lang="ko" data-challenge-language="ko" hidden><p data-sync-block="challenge-paragraph-0">인도 철도의 안내 방송 녹음이 변조된 것 같다. 무언가 이상하지만 방송 내용만으로는 뚜렷한 답이 보이지 않는다.</p><p data-sync-block="challenge-paragraph-1">녹음을 조사해 누군가 숨기려 한 것을 찾아라.</p></div><div class="challenge-files"><span class="field-label">ATTACHMENTS</span><div><button class="file-name attachment-trigger" type="button" data-attachment-slug="the-last-announcement" data-attachment-file="Train_Announcement.wav" data-attachment-index="../../../../assets/attachment-trees.json" aria-label="Browse Train_Announcement.wav file structure">Train_Announcement.wav</button></div></div><div class="challenge-format"><span class="field-label">FLAG FORMAT</span><code>InIt{...}</code></div></section><section id="write-up" class="writeup-section" aria-labelledby="writeup-title"><h2 id="writeup-title" class="writeup-label">Write Up</h2><article class="prose" lang="en" data-writeup-language="en"><h2 id="en-section-0" data-sync-block="heading-0">Starting from the Challenge</h2><p data-sync-block="paragraph-0">The goal is to find a hidden message in the provided <code>Train_Announcement.wav</code>. It sounds like a train announcement with an unusual sound added to it, and I can make out words such as <code>passenger</code> and <code>platform number</code>. I&#39;m not Indian, so I couldn&#39;t catch the announcement precisely, but it did not seem central to the puzzle. I checked the file structure, differences between the stereo waveforms, and the frequency distribution over time, in that order.</p><h2 id="en-section-1" data-sync-block="heading-1">1. Checking the file and stereo channels</h2><p data-sync-block="paragraph-1">The file is 48,000Hz, 16-bit PCM(Pulse-Code Modulation), two-channel audio approximately 17.39 seconds long. Its size matches the PCM data length, so there was no sign of a file simply appended to the end. The correlation coefficient between the two channels was approximately 0.99999994, and the difference between left and right samples ranged from −21 to 18.</p>
+<p data-sync-block="paragraph-2">I checked whether the differences contained a message, but found only small noise distributed across the entire recording with a mean close to zero and no readable pattern. I therefore moved from subtracting the channels to a time-frequency visualization.</p><blockquote>
+<p data-sync-block="paragraph-3"><strong>Q:</strong> If the message is carried by changing frequencies, what view would make it visible?</p></blockquote>
+<h2 id="en-section-2" data-sync-block="heading-2">2. The hidden text appears in a spectrogram</h2><p data-sync-block="paragraph-4">A spectrogram displays time on the horizontal axis, frequency on the vertical axis, and the strength of each component by color. STFT(Short-Time Fourier Transform) analyzes frequency while moving a short time window, so text drawn with frequencies inside a sound appears as an image.</p><pre><code class="language-python"># plot_spectrogram.py — written for this write-up
+from scipy.io import wavfile
+from scipy.signal import spectrogram
+import matplotlib.pyplot as plt
+import numpy as np
+
+rate, samples = wavfile.read(&quot;Train_Announcement.wav&quot;)
+left = samples[:, 0]
+
+freq, time, power = spectrogram(
+    left,
+    fs=rate,
+    nperseg=2048,
+    noverlap=1920,
+)
+db = 10 * np.log10(power + 1e-12)
+
+plt.figure(figsize=(18, 6))
+plt.pcolormesh(time, freq / 1000, db, shading=&quot;auto&quot;, cmap=&quot;magma&quot;)
+plt.xlim(2.5, 17.4)
+plt.ylim(4.5, 21)
+plt.xlabel(&quot;Time (s)&quot;)
+plt.ylabel(&quot;Frequency (kHz)&quot;)
+plt.tight_layout()
+plt.savefig(&quot;hidden_text_spectrogram.png&quot;, dpi=200)
+</code></pre>
+<p data-sync-block="paragraph-5"><img src="../../../../assets/the-last-announcement-1.png" alt="The Last Announcement image 2"></p>
+<p data-sync-block="paragraph-6">Running the code generated <code>hidden_text_spectrogram.png</code>. The flag was visible in the image.</p><h2 id="en-section-3" data-sync-block="heading-3">Final Flag</h2><pre><code class="language-plain">InIt{h1d1ng_f1l3s_1n_4ud10}
+</code></pre>
+<h2 id="en-section-4" data-sync-block="heading-4">Summary</h2><section class="writeup-summary" aria-labelledby="en-section-4"><ul>
+<li><strong>Audio check:</strong> The WAV has normal PCM length, and subtracting its nearly identical channels does not reveal text.</li>
+<li><strong>Visualization:</strong> Plot the left channel as a spectrogram and focus on 2.5–17.4 seconds at 4.5–21 kHz.</li>
+<li><strong>Result:</strong> The flag is written directly in the frequency plot.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="en-flow-0"><div class="flow-title" id="en-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">Train_Announcement.wav</span></li><li><span class="flow-node">Check PCM and channels</span></li><li><span class="flow-node">Compute spectrogram</span></li><li><span class="flow-node">Crop time/frequency range</span></li><li><span class="flow-node">Open hidden_text_spectrogram.png</span></li><li><span class="flow-node">Read the flag</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Misc write ups</a></div></article><article class="prose" lang="ko" data-writeup-language="ko" hidden><h2 id="ko-section-0" data-sync-block="heading-0">문제에서 출발하기</h2><p data-sync-block="paragraph-0">제공된 <code>Train_Announcement.wav</code>에서 숨겨진 메시지를 찾아야 한다. 해당 음성 파일은 열차 안내 방송에 이상한 소리가 추가된 것으로 보이고, <code>passenger</code>, <code>platform number</code>라는 단어도 들린다. 내가 인도인이 아니어서 안내 방송을 정확히 알아듣기는 어렵지만, 그 내용이 풀이에 중요해 보이지는 않았다. 그래서 파일 구조와 채널 간 파형 차이, 시간에 따른 주파수 분포를 차례로 조사했다.</p><h2 id="ko-section-1" data-sync-block="heading-1">1. 파일과 좌우 채널 확인하기</h2><p data-sync-block="paragraph-1">파일은 48,000Hz, 16비트 PCM(Pulse-Code Modulation), 2채널, 약 17.39초였다. 파일 크기가 PCM 데이터 길이와 맞아 끝에 단순히 덧붙인 파일은 보이지 않았다. 두 채널의 상관계수는 약 0.99999994였고, 좌우 샘플 차이는 −21~18 범위였다.</p>
+<p data-sync-block="paragraph-2">차이에 메시지가 있는지 확인했지만 평균 0에 가까운 작은 잡음이 전 구간에 분포할 뿐 읽을 만한 패턴이 없었다. 그래서 채널 뺄셈에서 시간-주파수 그림으로 분석 방향을 옮겼다.</p><blockquote>
+<p data-sync-block="paragraph-3"><strong>Q:</strong> 주파수 변화로 메시지를 넣었다면 어떤 화면에서 그 모양을 볼 수 있을까?</p></blockquote>
+<h2 id="ko-section-2" data-sync-block="heading-2">2. 스펙트로그램에서 숨은 글자 보기</h2><p data-sync-block="paragraph-4">스펙트로그램은 가로축에 시간, 세로축에 주파수, 색으로 각 성분의 세기를 표시한다. STFT(Short-Time Fourier Transform)는 짧은 시간 창을 이동하며 주파수를 분석하므로, 소리 속에 주파수로 그린 글자가 있다면 그림으로 나타난다.</p><pre><code class="language-python"># plot_spectrogram.py — written for this write-up
+from scipy.io import wavfile
+from scipy.signal import spectrogram
+import matplotlib.pyplot as plt
+import numpy as np
+
+rate, samples = wavfile.read(&quot;Train_Announcement.wav&quot;)
+left = samples[:, 0]
+
+freq, time, power = spectrogram(
+    left,
+    fs=rate,
+    nperseg=2048,
+    noverlap=1920,
+)
+db = 10 * np.log10(power + 1e-12)
+
+plt.figure(figsize=(18, 6))
+plt.pcolormesh(time, freq / 1000, db, shading=&quot;auto&quot;, cmap=&quot;magma&quot;)
+plt.xlim(2.5, 17.4)
+plt.ylim(4.5, 21)
+plt.xlabel(&quot;Time (s)&quot;)
+plt.ylabel(&quot;Frequency (kHz)&quot;)
+plt.tight_layout()
+plt.savefig(&quot;hidden_text_spectrogram.png&quot;, dpi=200)
+</code></pre>
+<p data-sync-block="paragraph-5"><img src="../../../../assets/the-last-announcement-1.png" alt="The Last Announcement image 2"></p>
+<p data-sync-block="paragraph-6">코드를 실행해 <code>hidden_text_spectrogram.png</code>를 생성했다. 이미지에서 Flag를 확인할 수 있었다.</p><h2 id="ko-section-3" data-sync-block="heading-3">Final Flag</h2><pre><code class="language-plain">InIt{h1d1ng_f1l3s_1n_4ud10}
+</code></pre>
+<h2 id="ko-section-4" data-sync-block="heading-4">요약</h2><section class="writeup-summary" aria-labelledby="ko-section-4"><ul>
+<li><strong>오디오 확인:</strong> WAV 길이는 정상이며 거의 같은 두 채널을 빼도 글자가 나오지 않는다.</li>
+<li><strong>시각화:</strong> 왼쪽 채널의 스펙트로그램에서 2.5–17.4초, 4.5–21kHz를 본다.</li>
+<li><strong>결과:</strong> 주파수 그림에 플래그가 직접 적혀 있다.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="ko-flow-0"><div class="flow-title" id="ko-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">Train_Announcement.wav</span></li><li><span class="flow-node">PCM과 채널 확인</span></li><li><span class="flow-node">스펙트로그램 계산</span></li><li><span class="flow-node">시간·주파수 범위 확대</span></li><li><span class="flow-node">hidden_text_spectrogram.png 열기</span></li><li><span class="flow-node">플래그 판독</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Misc write ups</a></div></article></section></div><aside class="toc"><span class="eyebrow">ON THIS PAGE</span><a href="#challenge">Challenge</a><a href="#write-up">Write Up</a><a data-toc-language="en" href="#en-section-0">Starting from the Challenge</a><a data-toc-language="en" href="#en-section-1">1. Checking the file and stereo channels</a><a data-toc-language="en" href="#en-section-2">2. The hidden text appears in a spectrogram</a><a data-toc-language="en" href="#en-section-3">Final Flag</a><a data-toc-language="en" href="#en-section-4">Summary</a><a data-toc-language="ko" href="#ko-section-0" hidden>문제에서 출발하기</a><a data-toc-language="ko" href="#ko-section-1" hidden>1. 파일과 좌우 채널 확인하기</a><a data-toc-language="ko" href="#ko-section-2" hidden>2. 스펙트로그램에서 숨은 글자 보기</a><a data-toc-language="ko" href="#ko-section-3" hidden>Final Flag</a><a data-toc-language="ko" href="#ko-section-4" hidden>요약</a><a class="toc-back" href="../index.html">← Back to list</a><a class="toc-next" href="../the-trolls-ticket/index.html"><span>Next challenge <b aria-hidden="true">→</b></span><strong>The Troll’s Ticket</strong></a></aside></div></main><footer><span>PERSONAL WRITE UPS</span><span>InIt CTF · 2026</span></footer></body></html>

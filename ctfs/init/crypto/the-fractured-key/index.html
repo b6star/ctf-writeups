@@ -1,0 +1,135 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="InIt CTF event page"><title>The Fractured Key · CTF Archive</title><link rel="stylesheet" href="../../../../assets/style.css"><script src="../../../../assets/app.js" defer></script></head><body class="theme-init"><a class="skip" href="#main">Skip to content</a><header><div class="nav"><a class="brand" href="../../../../ctfs/init/index.html" aria-label="InIt home"><span class="brand-mark"><span>{</span>InIt<span>}</span></span></a><div class="header-crumb"><a href="../../../../index.html">Home</a><i>/</i><a href="../../../../ctfs/init/index.html">InIt</a><i>/</i><a href="../../../../ctfs/init/categories/index.html">Categories</a><i>/</i><a href="../../../../ctfs/init/crypto/index.html">Crypto</a><i>/</i><span>The Fractured Key</span></div><nav aria-label="Main navigation"><div class="language-control"><span class="sr-only">Write up language</span><button id="writeup-language" class="language-toggle" type="button" aria-label="Switch language" aria-pressed="false"><span class="language-current">ENG</span></button></div><a href="../../../../index.html">HOME</a><a href="../../../../ctfs/init/index.html">INIT CTF</a></nav></div></header><main id="main"><div class="reading-layout challenge-layout"><div class="article-column"><section class="challenge-card" id="challenge" aria-labelledby="challenge-title"><div class="challenge-top"><span class="challenge-label">CHALLENGE</span><div class="challenge-meta"><span class="challenge-category crypto">Crypto</span><span class="points">500 <small>PTS</small></span></div></div><h1 id="challenge-title">The Fractured Key</h1><p class="challenge-author"><span class="field-label">AUTHOR</span> OffScript</p><div class="challenge-description" lang="en" data-challenge-language="en"><p data-sync-block="challenge-paragraph-0">We intercepted a secure communication between two operatives. We managed to get the cipher text and a strange script they were using to generate their keys. It looks like they tried to be clever by hiding the true flag among fakes. The true flag follows the standard InIt{...} format, but don&#39;t trust everything you decrypt.</p></div><div class="challenge-description" lang="ko" data-challenge-language="ko" hidden><p data-sync-block="challenge-paragraph-0">두 요원 사이의 보안 통신을 가로챘다. 암호문과 이들이 키를 생성할 때 쓰던 이상한 스크립트를 확보했다. 진짜 플래그를 가짜들 사이에 숨겨 둔 것 같다. 진짜 플래그는 표준 InIt{...} 형식이지만, 복호화되는 내용을 모두 믿어서는 안 된다.</p></div><div class="challenge-files"><span class="field-label">ATTACHMENTS</span><div><button class="file-name attachment-trigger" type="button" data-attachment-slug="the-fractured-key" data-attachment-file="intercepted.zip" data-attachment-index="../../../../assets/attachment-trees.json" aria-label="Browse intercepted.zip file structure">intercepted.zip</button></div></div><div class="challenge-format"><span class="field-label">FLAG FORMAT</span><code>InIt{...}</code></div></section><section id="write-up" class="writeup-section" aria-labelledby="writeup-title"><h2 id="writeup-title" class="writeup-label">Write Up</h2><article class="prose" lang="en" data-writeup-language="en"><h2 id="en-section-0" data-sync-block="heading-0">Starting from the Challenge</h2><p data-sync-block="paragraph-0">The provided <code>key_gen.py</code> contains the key-generation and encryption functions, while <code>intercepted.txt</code> contains three lines of ciphertext represented in hexadecimal. I opened <code>key_gen.py</code> first.</p><h2 id="en-section-1" data-sync-block="heading-1">1. Checking the key space in <code>key_gen.py</code></h2><p data-sync-block="paragraph-1">The key-generation function contains the following code.</p><pre><code class="language-python"># key_gen.py — challenge file (excerpt)
+seed = random.randint(0, 255)
+random.seed(seed)
+
+key = bytearray()
+for _ in range(32):
+    key.append(random.randint(0, 255))
+return bytes(key)
+</code></pre>
+<p data-sync-block="paragraph-2">The first line limits the seed to one value from 0 through 255. The code then initializes Python&#39;s pseudorandom number generator with that seed and draws 32 bytes.</p><blockquote>
+<p data-sync-block="paragraph-3"><strong>Q:</strong> The AES key is 32 bytes long, so how can we still try every candidate?</p></blockquote>
+<p data-sync-block="paragraph-4">Python&#39;s <code>random</code> produces the same sequence when initialized with the same seed. The key may be 32 bytes long, but this function can produce only 256 different keys because there are only 256 possible seeds. Recreating the key for each seed covers the entire key space used by the challenge.</p><pre><code class="language-python"># solve.py — written for this write-up (excerpt)
+for seed in range(256):
+    rng = random.Random(seed)
+    key = bytes(rng.randint(0, 255) for _ in range(32))
+</code></pre>
+<p data-sync-block="paragraph-5">The loop assigns each value from 0 through 255 to <code>seed</code>. <code>random.Random(seed)</code> creates a separate random-number generator initialized with that seed, and calling the same <code>randint(0, 255)</code> operation 32 times reproduces the original key.</p><h2 id="en-section-2" data-sync-block="heading-2">2. The First 16 Bytes Are the IV and the Rest Is Ciphertext</h2><p data-sync-block="paragraph-6">The encryption function stores its result as follows.</p><pre><code class="language-python"># key_gen.py — challenge file (excerpt)
+iv = os.urandom(16)
+cipher = AES.new(key, AES.MODE_CBC, iv=iv)
+return iv + cipher.encrypt(pad(data, AES.block_size))
+</code></pre>
+<p data-sync-block="paragraph-7">The return value concatenates the IV(Initialization Vector) and encrypted data. Each line of <code>intercepted.txt</code> can therefore be converted from hexadecimal to bytes and split into the first 16 bytes as the IV and the remainder as the ciphertext. Since the IV is included in the result, it does not need to be guessed separately.</p>
+<p data-sync-block="paragraph-8">Each line can now be decrypted with the key generated from each seed and that line&#39;s IV. Because the original data was padded before encryption, the PKCS#7 padding must also be removed after decryption.</p><h2 id="en-section-3" data-sync-block="heading-3">3. Trying the 256 seeds</h2><p data-sync-block="paragraph-9">The code tries every seed from 0 through 255 for each line and prints a result when the padding can be removed, the plaintext is readable ASCII, and it matches the <code>InIt{...}</code> format.</p><pre><code class="language-python"># solve.py — written for this write-up
+import random
+from pathlib import Path
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
+
+for line_no, line in enumerate(Path(&quot;intercepted.txt&quot;).read_text().splitlines(), 1):
+    if not line.strip():
+        continue
+
+    data = bytes.fromhex(line.strip())
+    iv, ciphertext = data[:16], data[16:]
+
+    for seed in range(256):
+        rng = random.Random(seed)
+        key = bytes(rng.randint(0, 255) for _ in range(32))
+
+        try:
+            plain = unpad(
+                AES.new(key, AES.MODE_CBC, iv=iv).decrypt(ciphertext),
+                AES.block_size,
+            )
+            text = plain.decode(&quot;ascii&quot;)
+        except (ValueError, UnicodeDecodeError):
+            continue
+
+        if (
+            text.startswith(&quot;InIt{&quot;)
+            and text.endswith(&quot;}&quot;)
+            and all(32 &lt;= ord(ch) &lt;= 126 for ch in text)
+        ):
+            print(line_no, seed, text)
+</code></pre>
+<p data-sync-block="paragraph-10">Even decryption with a wrong key can occasionally produce an ending that happens to satisfy the padding rules. I therefore checked both the text itself and the Flag format. Three results remained.</p><pre><code class="language-plain">1 42 InIt{w0w_y0u_f0und_1t_but_1ts_f4k3}
+2 201 InIt{ps3ud0_r4nd0m_1s_n0t_r4nd0m_k3y_sp4c3_t00_sm4ll}
+3 137 InIt{h4h4_n1c3_try_k33p_l00k1ng}
+</code></pre>
+<h2 id="en-section-4" data-sync-block="heading-4">4. Selecting the Real Answer from the Three Results</h2><p data-sync-block="paragraph-11">The first line identifies itself as a fake with <code>f4k3</code>, while the third says to keep looking with <code>k33p_l00k1ng</code>. Their contents indicate that both strings are decoys.</p>
+<p data-sync-block="paragraph-12">The second line describes the flaw just exploited: the key space generated by the pseudorandom process is too small. I submitted this value and confirmed it was Correct.</p><h2 id="en-section-5" data-sync-block="heading-5">Final Flag</h2><pre><code class="language-plain">InIt{ps3ud0_r4nd0m_1s_n0t_r4nd0m_k3y_sp4c3_t00_sm4ll}
+</code></pre>
+<h2 id="en-section-6" data-sync-block="heading-6">Summary</h2><section class="writeup-summary" aria-labelledby="en-section-6"><ul>
+<li><strong>Key generation:</strong> The seed is limited to <code>0–255</code>, so every candidate key can be reproduced.</li>
+<li><strong>Data layout:</strong> The first 16 bytes of each line are the IV; the rest is AES-CBC ciphertext.</li>
+<li><strong>Result:</strong> Line 2 with seed <code>201</code> gives the flag. The other two messages identify themselves as decoys.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="en-flow-0"><div class="flow-title" id="en-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">key_gen.py</span></li><li><span class="flow-node">256 possible seeds</span></li><li><span class="flow-node">Split IV / ciphertext</span></li><li><span class="flow-node">AES-CBC decrypt + unpad</span></li><li><span class="flow-node">Line 2 · seed 201</span></li><li><span class="flow-node">Read the flag</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Crypto write ups</a></div></article><article class="prose" lang="ko" data-writeup-language="ko" hidden><h2 id="ko-section-0" data-sync-block="heading-0">문제에서 출발하기</h2><p data-sync-block="paragraph-0">제공된 <code>key_gen.py</code>에는 키 생성과 암호화 함수가 있고, <code>intercepted.txt</code>에는 16진수로 표현된 암호문 세 줄이 있다. 먼저 <code>key_gen.py</code>를 열었다.</p><h2 id="ko-section-1" data-sync-block="heading-1">1. <code>key_gen.py</code>에서 키 후보 범위 확인하기</h2><p data-sync-block="paragraph-1">키 생성 함수에는 다음 코드가 있다.</p><pre><code class="language-python"># key_gen.py — challenge file (excerpt)
+seed = random.randint(0, 255)
+random.seed(seed)
+
+key = bytearray()
+for _ in range(32):
+    key.append(random.randint(0, 255))
+return bytes(key)
+</code></pre>
+<p data-sync-block="paragraph-2">첫 줄에서 시드를 0부터 255까지로 제한한다. 그다음 <code>random.seed(seed)</code>로 Python의 의사난수 생성기를 초기화하고, 숫자를 32번 뽑아 키를 만든다.</p><blockquote>
+<p data-sync-block="paragraph-3"><strong>Q:</strong> AES 키는 32바이트인데 어떻게 후보를 전부 넣어 볼 수 있을까?</p></blockquote>
+<p data-sync-block="paragraph-4">Python의 <code>random</code>은 같은 시드에서 같은 숫자열을 만든다. 키 길이는 32바이트지만 이 함수가 만들 수 있는 키는 시드 수와 같은 256개뿐이다. 시드 0부터 255까지 같은 과정을 반복하면 문제에서 사용한 키 후보 전체를 재현할 수 있다.</p><pre><code class="language-python"># solve.py — written for this write-up (excerpt)
+for seed in range(256):
+    rng = random.Random(seed)
+    key = bytes(rng.randint(0, 255) for _ in range(32))
+</code></pre>
+<p data-sync-block="paragraph-5">반복문의 <code>seed</code>에 0부터 255까지 하나씩 지정한다. <code>random.Random(seed)</code>는 해당 시드로 초기화한 별도의 난수 생성기이며, 여기서 원본과 같은 <code>randint(0, 255)</code>를 32번 호출하면 같은 키를 얻는다.</p><h2 id="ko-section-2" data-sync-block="heading-2">2. 앞 16바이트는 IV, 나머지는 암호문이다</h2><p data-sync-block="paragraph-6">암호화 함수는 다음과 같이 결과를 저장한다.</p><pre><code class="language-python"># key_gen.py — challenge file (excerpt)
+iv = os.urandom(16)
+cipher = AES.new(key, AES.MODE_CBC, iv=iv)
+return iv + cipher.encrypt(pad(data, AES.block_size))
+</code></pre>
+<p data-sync-block="paragraph-7">반환값은 IV(Initialization Vector)와 암호화된 데이터를 이어 붙인 바이트열이다. 따라서 <code>intercepted.txt</code>의 각 줄을 16진수에서 바이트로 바꾼 뒤, 앞 16바이트를 IV로, 나머지를 암호문으로 나눈다. IV는 결과에 포함돼 있으므로 별도로 추측할 필요가 없다.</p>
+<p data-sync-block="paragraph-8">이제 각 시드로 만든 키와 해당 줄의 IV를 사용해 AES-CBC 복호화를 시도하면 된다. 원본은 암호화 전에 패딩을 붙였으므로 복호화한 뒤에는 PKCS#7 패딩도 제거한다.</p><h2 id="ko-section-3" data-sync-block="heading-3">3. 시드 256개로 복호화하기</h2><p data-sync-block="paragraph-9">다음 코드는 각 줄에 대해 시드 0부터 255까지를 모두 시도하고, 패딩을 제거한 결과가 읽을 수 있는 ASCII 문자열이면서 <code>InIt{...}</code> 형식일 때 출력한다.</p><pre><code class="language-python"># solve.py — written for this write-up
+import random
+from pathlib import Path
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
+
+for line_no, line in enumerate(Path(&quot;intercepted.txt&quot;).read_text().splitlines(), 1):
+    if not line.strip():
+        continue
+
+    data = bytes.fromhex(line.strip())
+    iv, ciphertext = data[:16], data[16:]
+
+    for seed in range(256):
+        rng = random.Random(seed)
+        key = bytes(rng.randint(0, 255) for _ in range(32))
+
+        try:
+            plain = unpad(
+                AES.new(key, AES.MODE_CBC, iv=iv).decrypt(ciphertext),
+                AES.block_size,
+            )
+            text = plain.decode(&quot;ascii&quot;)
+        except (ValueError, UnicodeDecodeError):
+            continue
+
+        if (
+            text.startswith(&quot;InIt{&quot;)
+            and text.endswith(&quot;}&quot;)
+            and all(32 &lt;= ord(ch) &lt;= 126 for ch in text)
+        ):
+            print(line_no, seed, text)
+</code></pre>
+<p data-sync-block="paragraph-10">잘못된 키로 복호화해도 끝부분이 우연히 패딩 규칙에 맞을 수 있다. 따라서 문자열의 내용과 플래그 형식을 함께 확인했다. 이렇게 남은 결과는 다음 세 개다.</p><pre><code class="language-plain">1 42 InIt{w0w_y0u_f0und_1t_but_1ts_f4k3}
+2 201 InIt{ps3ud0_r4nd0m_1s_n0t_r4nd0m_k3y_sp4c3_t00_sm4ll}
+3 137 InIt{h4h4_n1c3_try_k33p_l00k1ng}
+</code></pre>
+<h2 id="ko-section-4" data-sync-block="heading-4">4. 세 결과 중 실제 정답 고르기</h2><p data-sync-block="paragraph-11">1행은 <code>f4k3</code>로 자신이 가짜라고 밝히고, 3행은 <code>k33p_l00k1ng</code>이라며 계속 찾으라고 한다. 두 문자열은 내용상 미끼로 판단했다.</p>
+<p data-sync-block="paragraph-12">2행은 의사난수로 만든 키의 후보가 너무 적다는 뜻으로, 방금 이용한 코드의 결함과 맞는다. 이 값을 제출해 Correct를 확인했다.</p><h2 id="ko-section-5" data-sync-block="heading-5">Final Flag</h2><pre><code class="language-plain">InIt{ps3ud0_r4nd0m_1s_n0t_r4nd0m_k3y_sp4c3_t00_sm4ll}
+</code></pre>
+<h2 id="ko-section-6" data-sync-block="heading-6">요약</h2><section class="writeup-summary" aria-labelledby="ko-section-6"><ul>
+<li><strong>키 생성:</strong> 시드가 <code>0–255</code>라서 후보 키를 모두 재현할 수 있다.</li>
+<li><strong>저장 구조:</strong> 각 줄의 앞 16바이트는 IV, 나머지는 AES-CBC 암호문이다.</li>
+<li><strong>결과:</strong> 2행을 시드 <code>201</code>로 복호화해 플래그를 얻는다. 다른 두 메시지는 내용에서 미끼임을 드러낸다.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="ko-flow-0"><div class="flow-title" id="ko-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">key_gen.py</span></li><li><span class="flow-node">시드 후보 256개</span></li><li><span class="flow-node">IV / 암호문 분리</span></li><li><span class="flow-node">AES-CBC 복호화 + 패딩 제거</span></li><li><span class="flow-node">2행 · 시드 201</span></li><li><span class="flow-node">플래그 확인</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Crypto write ups</a></div></article></section></div><aside class="toc"><span class="eyebrow">ON THIS PAGE</span><a href="#challenge">Challenge</a><a href="#write-up">Write Up</a><a data-toc-language="en" href="#en-section-0">Starting from the Challenge</a><a data-toc-language="en" href="#en-section-1">1. Checking the key space in <code>key_gen.py</code></a><a data-toc-language="en" href="#en-section-2">2. The First 16 Bytes Are the IV and the Rest Is Ciphertext</a><a data-toc-language="en" href="#en-section-3">3. Trying the 256 seeds</a><a data-toc-language="en" href="#en-section-4">4. Selecting the Real Answer from the Three Results</a><a data-toc-language="en" href="#en-section-5">Final Flag</a><a data-toc-language="en" href="#en-section-6">Summary</a><a data-toc-language="ko" href="#ko-section-0" hidden>문제에서 출발하기</a><a data-toc-language="ko" href="#ko-section-1" hidden>1. <code>key_gen.py</code>에서 키 후보 범위 확인하기</a><a data-toc-language="ko" href="#ko-section-2" hidden>2. 앞 16바이트는 IV, 나머지는 암호문이다</a><a data-toc-language="ko" href="#ko-section-3" hidden>3. 시드 256개로 복호화하기</a><a data-toc-language="ko" href="#ko-section-4" hidden>4. 세 결과 중 실제 정답 고르기</a><a data-toc-language="ko" href="#ko-section-5" hidden>Final Flag</a><a data-toc-language="ko" href="#ko-section-6" hidden>요약</a><a class="toc-back" href="../index.html">← Back to list</a></aside></div></main><footer><span>PERSONAL WRITE UPS</span><span>InIt CTF · 2026</span></footer></body></html>

