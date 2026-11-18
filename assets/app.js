@@ -2,35 +2,49 @@ const copyIcon='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stro
 if(location.pathname.endsWith('/index.html'))history.replaceState(null,'',location.pathname.slice(0,-10)+location.search+location.hash);
 const hitconCanvas=document.querySelector('canvas.hitcon-network');
 if(hitconCanvas){
- const drawNetwork=()=>{
+ let networkFrame;
+ let networkPoints=[];
+ let networkSize={width:0,height:0,scale:1};
+ const resizeNetwork=()=>{
   const {width,height}=hitconCanvas.getBoundingClientRect();
   const scale=Math.min(window.devicePixelRatio||1,2);
   hitconCanvas.width=Math.round(width*scale);
   hitconCanvas.height=Math.round(height*scale);
-  const ctx=hitconCanvas.getContext('2d');
-  ctx.scale(scale,scale);
-  const points=[];
+  networkSize={width,height,scale};
+  networkPoints=[];
   const count=Math.max(20,Math.round(width*height/18000));
-  for(let attempt=0;points.length<count&&attempt<count*100;attempt++){
-   const point={x:Math.random()*width,y:Math.random()*height};
-   if(points.every(other=>Math.hypot(point.x-other.x,point.y-other.y)>62))points.push(point);
+  for(let attempt=0;networkPoints.length<count&&attempt<count*100;attempt++){
+   const point={x:Math.random()*width,y:Math.random()*height,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18};
+   if(networkPoints.every(other=>Math.hypot(point.x-other.x,point.y-other.y)>62))networkPoints.push(point);
   }
+ };
+ const drawNetwork=()=>{
+  const {width,height,scale}=networkSize;
+  const ctx=hitconCanvas.getContext('2d');
+  ctx.setTransform(scale,0,0,scale,0,0);
+  ctx.clearRect(0,0,width,height);
+  networkPoints.forEach(point=>{
+   point.x+=point.vx;point.y+=point.vy;
+   if(point.x<0||point.x>width)point.vx*=-1;
+   if(point.y<0||point.y>height)point.vy*=-1;
+  });
   const edges=new Set();
-  points.forEach((point,i)=>{
-   const nearest=points.map((other,j)=>({j,d:Math.hypot(point.x-other.x,point.y-other.y)})).filter(item=>item.j!==i&&item.d<300).sort((a,b)=>a.d-b.d);
+  networkPoints.forEach((point,i)=>{
+   const nearest=networkPoints.map((other,j)=>({j,d:Math.hypot(point.x-other.x,point.y-other.y)})).filter(item=>item.j!==i&&item.d<300).sort((a,b)=>a.d-b.d);
    nearest.slice(0,2+(Math.random()<.35?1:0)).forEach(({j,d})=>{
     const key=[i,j].sort((a,b)=>a-b).join('-');
     if(edges.has(key))return;
     edges.add(key);
     ctx.strokeStyle=`rgba(20,115,188,${Math.max(.28,.85-d/460)})`;
     ctx.lineWidth=.8;
-    ctx.beginPath();ctx.moveTo(point.x,point.y);ctx.lineTo(points[j].x,points[j].y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(point.x,point.y);ctx.lineTo(networkPoints[j].x,networkPoints[j].y);ctx.stroke();
    });
   });
+  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)networkFrame=requestAnimationFrame(drawNetwork);
  };
- drawNetwork();
+ resizeNetwork();drawNetwork();
  let networkResize;
- window.addEventListener('resize',()=>{clearTimeout(networkResize);networkResize=setTimeout(drawNetwork,150)});
+ window.addEventListener('resize',()=>{clearTimeout(networkResize);networkResize=setTimeout(()=>{cancelAnimationFrame(networkFrame);resizeNetwork();drawNetwork()},150)});
 }
 const archiveTerminal=document.querySelector('.site-home-hero .terminal');
 if(archiveTerminal&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
