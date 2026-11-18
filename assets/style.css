@@ -101,7 +101,7 @@ main:has(.reading-layout)>.crumb{max-width:720px;margin-inline:auto}
 .header-crumb i{font-style:normal;color:#47606d}
 header .nav{justify-content:flex-start;gap:28px}
 header .nav nav{margin-left:auto}
-@media(max-width:640px){.header-crumb{gap:5px;font-size:9px}.header-crumb a:nth-last-of-type(-n+2),.header-crumb span:last-child{display:inline}}
+@media(max-width:640px){.header-crumb{gap:5px;font-size:9px}.header-crumb>:not(:nth-last-child(-n+3)){display:none}}
 .site-home-hero{grid-template-columns:1fr 1fr;min-height:460px;gap:72px;padding:95px 0 90px}
 .site-home-hero h1{font-size:clamp(56px,7vw,88px);line-height:1.02}
 .site-home-hero h1 span{color:var(--cyan)}
@@ -209,3 +209,8 @@ body:after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;back
 .event-info h2{max-width:100%;white-space:nowrap}
 @media(max-width:640px){.event-info h2{white-space:normal}}
 
+
+/* Keep external-link arrow glyphs consistent on narrow screens and across languages. */
+.button>span:last-child{font-family:Arial,sans-serif;flex:none;line-height:1;}
+.category h3>span{font-family:Arial,sans-serif;line-height:1}
+@media(max-width:640px){.button>span:last-child,.category h3>span{font-family:Arial,sans-serif;flex:none;transform:none}}
