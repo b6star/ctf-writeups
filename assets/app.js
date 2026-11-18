@@ -14,7 +14,11 @@ if(hitconCanvas){
   networkPoints=[];
   const count=Math.max(20,Math.round(width*height/18000));
   for(let attempt=0;networkPoints.length<count&&attempt<count*100;attempt++){
-   const point={x:Math.random()*width,y:Math.random()*height,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18};
+   const point={
+    x:Math.random()*width,y:Math.random()*height,
+    vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,
+    connectionCount:Math.random()<.35?4:3
+   };
    if(networkPoints.every(other=>Math.hypot(point.x-other.x,point.y-other.y)>62))networkPoints.push(point);
   }
  };
@@ -31,7 +35,7 @@ if(hitconCanvas){
   const edges=new Set();
   networkPoints.forEach((point,i)=>{
    const nearest=networkPoints.map((other,j)=>({j,d:Math.hypot(point.x-other.x,point.y-other.y)})).filter(item=>item.j!==i&&item.d<300).sort((a,b)=>a.d-b.d);
-   nearest.slice(0,2+(Math.random()<.35?1:0)).forEach(({j,d})=>{
+   nearest.slice(0,point.connectionCount).forEach(({j,d})=>{
     const key=[i,j].sort((a,b)=>a-b).join('-');
     if(edges.has(key))return;
     edges.add(key);
