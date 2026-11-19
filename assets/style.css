@@ -233,8 +233,8 @@ body:after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;back
 .theme-hitcon .member-count{font-weight:700}
 
 /* Carry the Spooky emblem through category and write-up pages. */
-.theme-spooky:not(:has(.event-home-hero))::before{inset:auto;top:50%;left:50%;width:min(55vw,620px);height:min(55vw,620px);z-index:0;background:url('spooky-2026/spooky-logo.png') center/contain no-repeat;opacity:.18;mask-image:radial-gradient(circle,#000 38%,#0009 61%,transparent 78%);transform:translate(-50%,-50%)}
+.theme-spooky:not(:has(.event-home-hero))::before{inset:auto;top:50%;left:50%;width:min(55vw,620px);height:min(55vw,620px);z-index:0;background:url('spooky-2026/spooky-logo.png') center/contain no-repeat;opacity:.08;mask-image:radial-gradient(circle,#000 38%,#0009 61%,transparent 78%);transform:translate(-50%,-50%)}
 .theme-spooky:not(:has(.event-home-hero))>main,.theme-spooky:not(:has(.event-home-hero))>footer{position:relative;z-index:1}
 @media(prefers-reduced-motion:no-preference){.theme-spooky:not(:has(.event-home-hero))::before{animation:spooky-page-background-turn 90s linear infinite}}
 @keyframes spooky-page-background-turn{from{transform:translate(-50%,-50%) rotate(0turn)}to{transform:translate(-50%,-50%) rotate(-1turn)}}
-@media(max-width:700px){.theme-spooky:not(:has(.event-home-hero))::before{width:85vw;height:85vw;opacity:.14}}
+@media(max-width:700px){.theme-spooky:not(:has(.event-home-hero))::before{width:85vw;height:85vw;opacity:.06}}
