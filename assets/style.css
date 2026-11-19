@@ -177,6 +177,9 @@ body:after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;back
 .event-rank,.event-detail strong{color:var(--cyan);font:600 14px var(--mono)}
 .event-rank-total{color:var(--muted);font:400 10px var(--mono);letter-spacing:1.3px}
 .event-detail{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.init-award{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.init-award strong{display:block;color:var(--cyan);font:600 11px var(--mono);letter-spacing:.6px}
+.init-award p{margin:5px 0 0;color:var(--muted);font:12px/1.5 var(--sans)}
 .event-home-hero .scoreboard-status,.event-home-hero .event-detail{flex-direction:row-reverse}
 .team-full{display:block;color:var(--muted);font:10px/1.5 var(--mono);max-width:150px;margin-top:5px}
 .event-home-hero .button{background:color-mix(in srgb,var(--cyan) 20%,transparent);border-color:var(--cyan)}
