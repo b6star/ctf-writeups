@@ -1,0 +1,23 @@
+/* SPOOKY CTF palette and event-specific presentation. */
+.theme-spooky{--cyan:#68ed5a;--line:#2e4732;background:radial-gradient(circle at 50% 30%,#0d1a10 0%,#0a0d0b 38%,#050607 72%)}
+.theme-spooky:after{display:none}
+.theme-spooky header{background:#0a0c0ddc}
+.theme-spooky .event-home-hero:before{background:url('spooky-2026/spooky-logo.png') center/contain no-repeat;border:0;border-radius:0;box-shadow:none;width:min(55vw,620px);height:min(55vw,620px);top:35px;opacity:.26;mask-image:radial-gradient(circle,#000 38%,#0009 61%,transparent 78%)}
+@media(prefers-reduced-motion:no-preference){
+ .theme-spooky .event-home-hero:before{animation:spooky-background-turn 90s linear infinite}
+}
+@keyframes spooky-background-turn{
+ from{transform:translateX(-50%) rotate(0turn)}
+ to{transform:translateX(-50%) rotate(-1turn)}
+}
+.theme-spooky .event-home-hero h1{font-family:Georgia,serif;font-weight:800;letter-spacing:-2px;color:#f3f9ef;text-shadow:2px 0 #6cf35a,-2px 0 #273d23,0 0 28px #69ed5b55}
+.theme-spooky .event-host{color:#b7c4b6}
+.theme-spooky .event-home-hero .team-profile{background:#101411e8;border-color:#426a40}
+.theme-spooky .event-home-hero .button{background:#24472a;border-color:#69ed5b;color:#e7ffe6}
+@media(max-width:700px){.theme-spooky .event-home-hero:before{width:85vw;height:85vw;opacity:.2;top:70px}}
+/* Carry the Spooky emblem through category and write-up pages. */
+.theme-spooky:not(:has(.event-home-hero))::before{inset:auto;top:50%;left:50%;width:min(55vw,620px);height:min(55vw,620px);z-index:0;background:url('spooky-2026/spooky-logo.png') center/contain no-repeat;opacity:.08;mask-image:radial-gradient(circle,#000 38%,#0009 61%,transparent 78%);transform:translate(-50%,-50%)}
+.theme-spooky:not(:has(.event-home-hero))>main,.theme-spooky:not(:has(.event-home-hero))>footer{position:relative;z-index:1}
+@media(prefers-reduced-motion:no-preference){.theme-spooky:not(:has(.event-home-hero))::before{animation:spooky-page-background-turn 90s linear infinite}}
+@keyframes spooky-page-background-turn{from{transform:translate(-50%,-50%) rotate(0turn)}to{transform:translate(-50%,-50%) rotate(-1turn)}}
+@media(max-width:700px){.theme-spooky:not(:has(.event-home-hero))::before{width:85vw;height:85vw;opacity:.06}}

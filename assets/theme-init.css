@@ -1,0 +1,17 @@
+/* INIT CTF palette and event-specific presentation. */
+.theme-init{--cyan:#62bfd0;--line:#293740}
+.init-writeups-title{font-size:clamp(38px,5vw,62px)!important;letter-spacing:-2px;white-space:nowrap}
+@media(max-width:640px){.init-writeups-title{font-size:clamp(27px,7vw,42px)!important;letter-spacing:-1.2px}}
+.init-writeups-title span{color:var(--cyan)}
+.init-home-hero{min-height:620px;padding:78px 0 140px;align-items:start}
+.init-home-hero .home-aside{width:340px;max-width:100%}
+@media(max-width:700px){.init-home-hero{min-height:0;padding:52px 0 100px}.init-home-hero .home-aside{width:min(100%,420px)}}
+.init-award{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.init-award strong{display:block;color:var(--cyan);font:600 11px var(--mono);letter-spacing:.6px}
+.init-award p{margin:5px 0 0;color:var(--muted);font:12px/1.5 var(--sans)}
+.theme-init .init-home-hero{position:relative}
+.theme-init .init-home-hero h1{color:#e8f6f9;text-shadow:0 0 9px #62bfd088,0 0 30px #62bfd055,0 0 58px #62bfd02e}
+.theme-init .brand-mark{text-shadow:0 0 8px #62bfd088,0 0 22px #62bfd04d}
+.theme-init .init-home-hero:before{content:'';position:absolute;left:50%;top:45px;transform:translateX(-50%);width:min(62vw,600px);height:545px;pointer-events:none;opacity:.58;background:url('init-2026/init-circuit.png') center/contain no-repeat;mix-blend-mode:screen;mask-image:radial-gradient(ellipse,#000 35%,#000c 65%,transparent 85%)}
+.theme-init .init-home-hero:before{filter:drop-shadow(0 0 15px #62bfd070)}
+@media(max-width:700px){.theme-init .init-home-hero:before{width:90vw;height:82vw;top:40px;opacity:.32}}

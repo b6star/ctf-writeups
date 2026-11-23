@@ -1,0 +1,13 @@
+/* HITCON CTF palette and event-specific presentation. */
+.theme-hitcon{--cyan:#479edb;--line:#294056;background:#101113}
+.theme-hitcon:after{display:none}
+.theme-hitcon header{background:#0a0c0ddc}
+.theme-hitcon header{background:#101113e8}
+.theme-hitcon .event-home-hero:before{display:none}
+.hitcon-network{position:absolute;left:50%;top:0;transform:translateX(-50%);width:min(100vw,1200px);height:650px;opacity:.38;pointer-events:none;mask-image:linear-gradient(to bottom,#000 0%,#000 48%,transparent 100%)}
+.theme-hitcon .event-home-hero .home-intro,.theme-hitcon .event-home-hero .home-aside{position:relative;z-index:1}
+.theme-hitcon .event-home-hero .team-profile{background:#090c10ef}
+.theme-hitcon .event-home-hero h1{font-family:var(--mono);font-weight:700;letter-spacing:-3px;color:#e0e3e6;text-shadow:0 0 6px #e0e3e6a8,0 0 22px #c5d3e45e}
+.theme-hitcon .event-host{color:#6caae0}
+@media(max-width:700px){.hitcon-network{height:500px;opacity:.28}}
+.theme-hitcon .member-count{font-weight:700}

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2880 1440" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#9aa4c5"/><stop offset="1" stop-color="#737e9f"/></linearGradient>
+    <linearGradient id="dusk" x2="0" y2="1"><stop stop-color="#030918" stop-opacity=".88"/><stop offset=".65" stop-color="#071329" stop-opacity=".77"/><stop offset="1" stop-color="#0d1b35" stop-opacity=".64"/></linearGradient>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h2880v1440H0z"/>
+  <path fill="#c9d0e4" d="M0 0Q520-45 960 0q480 30 960 0h960v30H0z"/>
+  <path fill="#aeb7d1" d="M0 558 174 767 485 511 554 624 696 730 865 1000 588 1220 0 1300z"/>
+  <path fill="#979fbf" d="m485 511 211 113 230 252-344 300-52-480 24-72z"/>
+  <path fill="#b6bed8" d="m0 558 174 210 55-98 256-159 95 263-122 363L0 906z"/>
+  <path fill="#d8deee" d="M0 856 224 1012 325 1157 595 1271 0 1400z"/>
+  <path fill="#b8c0d8" d="m780 866 208-269 303-206 122 60 207 444 326 386-560 119-731-99z"/>
+  <path fill="#dce1f0" d="m780 866 208-269 303-206-91 173 51 182-116 133 118 264-14 220-454-60z"/>
+  <path fill="#a9b2cf" d="m1291 391 122 60 207 444 326 386-566 100-131-236-115-263 119-139-50-181z"/>
+  <path fill="#7f8aab" d="m1291 391-103 180 46 166-107 143 131 260-22 153 37-148-126-265 113-135-54-173z"/>
+  <path fill="#e8ecf7" d="m1291 391-91 174 34 16 64-155 109 29z"/>
+  <path fill="#b3bad3" d="m1620 853 272-286 283 158 193 272-164 332-367 40z"/>
+  <path fill="#8f99b7" d="m1892 567 35 114-70 125 84 53-16 294-87 215-218-515z"/>
+  <path fill="#a6aec9" d="m1892 567 283 158 193 272-164 332-279-175 16-296-85-52 71-125z"/>
+  <path fill="#d5ddef" d="m1910 1150 384-470 313-142 273 237v665h-934z"/>
+  <path fill="#ecf0fa" d="m1910 1150 384-470 313-142-183 300 85 277 371 90v235h-934z"/>
+  <path fill="#aab3d1" d="m2607 538 273 237v448l-371-108-85-277z"/>
+  <path fill="#f0f2fa" d="m2294 680 313-142-183 300-214 90z"/>
+  <path fill="#c7d0e6" d="m2607 538 273 237v53l-265-91-191 101z"/>
+  <path fill="#fff" d="M0 1243q385-70 705-38 296-13 566 75 441 104 730 42 410-62 879-44v162H0z"/>
+  <path fill="url(#dusk)" d="M0 0h2880v1440H0z"/>
+  <path fill="#151923" d="M2574 427h7v137h-7z"/>
+  <path fill="#e54545" d="M2581 427h83v16h-83zm0 32h83v16h-83z"/>
+  <path fill="#fff" d="M2581 443h83v16h-83z"/>
+</svg>

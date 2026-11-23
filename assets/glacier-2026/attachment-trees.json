@@ -1,0 +1,9 @@
+{
+  "flagchecker": {
+    "flagchecker.tar.gz": [
+      {"path": "flagchecker", "folder": true},
+      {"path": "flagchecker/challenge", "folder": false},
+      {"path": "flagchecker/sha256sum", "folder": false}
+    ]
+  }
+}

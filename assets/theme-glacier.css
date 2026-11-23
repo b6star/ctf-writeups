@@ -1,0 +1,29 @@
+/* GLACIER CTF palette and event-specific presentation. */
+.theme-glacier{--cyan:#a9e9ff;--line:#626a80;background:#121c33}
+.theme-glacier:before{display:block;position:fixed;inset:0;z-index:0;opacity:1;background:url('glacier-2026/mountains.svg') center center/cover no-repeat}
+.theme-glacier:after{display:none}
+.theme-glacier>main,.theme-glacier>footer{position:relative;z-index:1}
+.theme-glacier header{background:#06101cdd}
+.theme-glacier .event-home-hero{min-height:720px}
+.theme-glacier .event-home-hero:before{display:none}
+.theme-glacier .event-home-hero h1{color:#f3f5fb;text-shadow:0 2px 20px #1b254a80}
+.theme-glacier .category,.theme-glacier .post-row,.theme-glacier .challenge-card,.theme-glacier .writeup-summary{background:#081521e8;backdrop-filter:blur(8px)}
+@media(prefers-reduced-motion:reduce){.theme-glacier:after{animation:none}}
+.theme-glacier .category,.theme-glacier .post-row,.theme-glacier .challenge-card,.theme-glacier .toc,.theme-glacier .prose .writeup-summary{background:#3c4148ed;border-color:#8a929b;backdrop-filter:blur(8px)}
+.theme-glacier .category:hover,.theme-glacier .post-row:hover{background:#4b5159ed;border-color:#a9e9ff}
+.theme-glacier .challenge-description,.theme-glacier .file-name,.theme-glacier .code-panel,.theme-glacier .prose .flag-panel{background:#30353beF;border-color:#7c858e}
+.theme-glacier .code-toolbar,.theme-glacier .flag-panel .code-toolbar{background:#4b5159;border-bottom-color:#8a929b}
+.theme-glacier .code-toolbar .copy-code{background:#3b4249;border-color:#8a929b}
+.theme-glacier .challenge-label,.theme-glacier .challenge-category{background:#4b5159;border-color:#9aa2aa}
+.theme-glacier main,.theme-glacier footer{color:#e6eaf3}
+.theme-glacier .challenge-card,.theme-glacier .category,.theme-glacier .post-row,.theme-glacier .toc,.theme-glacier .code-panel,.theme-glacier .prose .flag-panel{color:#f2f4f8}
+.theme-glacier .prose{color:#dce3ef}
+.theme-glacier .prose h2,.theme-glacier .prose h3,.theme-glacier .writeup-label,.theme-glacier .page-intro h1{color:#f1f4fa}
+.theme-glacier .prose .code-panel pre code{color:#f2f4f8}
+.theme-glacier .eyebrow,.theme-glacier .back-link{color:#d3dceb}
+.theme-glacier .prose p code,.theme-glacier .prose li code{color:#eef2f8;background:#444c5b}
+.theme-glacier .event-host,.theme-glacier .event-no-writeups{color:#d3dceb}
+.theme-glacier .event-home-hero .team-profile,.theme-glacier .prose .writeup-summary{color:#f2f4f8;background:#3c4148ed;border-color:#8a929b}
+.theme-glacier .toc a,.theme-glacier .toc .eyebrow{color:#e2e7ef}
+.theme-glacier .event-home-hero .eyebrow,.theme-glacier .event-home-hero .event-no-writeups{color:#f3f5fb}
+.theme-glacier .event-home-hero .button{color:#f2f5fb;background:#1b2b45bb;border-color:#819eba}
