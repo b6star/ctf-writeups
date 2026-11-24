@@ -5,8 +5,14 @@
       {"path": "flagchecker/challenge", "folder": false},
       {"path": "flagchecker/sha256sum", "folder": false}
     ]
-  }
-,
+  },
+  "frostgate-license-manager": {
+    "virt.tar.gz": [
+      {"path": "virt", "folder": true},
+      {"path": "virt/virt.exe", "folder": false},
+      {"path": "virt/sha256sum", "folder": false}
+    ]
+  },
   "mircosoft": {
     "mircosoft.tar.gz": [
       {"path": "mircosoft", "folder": true},
