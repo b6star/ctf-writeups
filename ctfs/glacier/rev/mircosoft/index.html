@@ -1,0 +1,443 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Glacier CTF event page"><title>mircosoft · CTF Archive</title><link rel="stylesheet" href="../../../../assets/style.css"><link rel="stylesheet" href="../../../../assets/theme-glacier.css"><script src="../../../../assets/app.js" defer></script><script src="../../../../assets/glacier-2026/snowstorm-min.js" defer></script><script src="../../../../assets/glacier-2026/snowstorm-config.js" defer></script></head><body class="theme-glacier"><a class="skip" href="#main">Skip to content</a><header><div class="nav"><a class="brand" href="../../../../ctfs/glacier/" aria-label="Glacier home"><span class="brand-mark"><span>{</span>Glacier<span>}</span></span></a><div class="header-crumb"><a href="../../../../ctfs/glacier/categories/">Categories</a><i>/</i><a href="../../../../ctfs/glacier/rev/">Rev</a><i>/</i><span>mircosoft</span></div><nav aria-label="Main navigation"><div class="language-control"><span class="sr-only">Write up language</span><button id="writeup-language" class="language-toggle" type="button" aria-label="Switch language" aria-pressed="false"><span class="language-current">ENG</span></button></div><a href="../../../../">HOME</a></nav></div></header><main id="main"><div class="reading-layout challenge-layout"><div class="article-column"><section class="challenge-card" id="challenge" aria-labelledby="challenge-title"><div class="challenge-top"><div class="challenge-heading-meta"><span class="challenge-label">CHALLENGE</span><span class="challenge-category rev">Rev</span></div></div><h1 id="challenge-title">mircosoft</h1><div class="challenge-description" lang="en" data-challenge-language="en"><p data-sync-block="challenge-paragraph-0">This challenge was tested on Windows 11 Version 10.0.26100</p></div><div class="challenge-description" lang="ko" data-challenge-language="ko" hidden><p data-sync-block="challenge-paragraph-0">이 문제는 Windows 11 Version 10.0.26100에서 테스트되었습니다.</p></div><div class="challenge-files"><span class="field-label">ATTACHMENTS</span><div><button class="file-name attachment-trigger" type="button" data-attachment-slug="mircosoft" data-attachment-file="mircosoft.tar.gz" data-attachment-index="../../../../assets/glacier-2026/attachment-trees.json" aria-label="Browse mircosoft.tar.gz file structure">mircosoft.tar.gz</button></div></div><div class="challenge-format"><span class="field-label">FLAG FORMAT</span><code>gctf{.*}</code></div></section><section id="write-up" class="writeup-section" aria-labelledby="writeup-title"><h2 id="writeup-title" class="writeup-label">Write Up</h2><article class="prose" lang="en" data-writeup-language="en"><h2 id="en-section-0" data-sync-block="heading-0">Starting from the Challenge</h2><p data-sync-block="paragraph-0">The challenge was tested on Windows 11 Version 10.0.26100. Extracting <code>mircosoft.tar.gz</code> gives four files.</p><pre><code class="language-text">mircosoft/
+├── admin_machine.dmp
+├── license.bin
+├── mircosoft.exe
+└── sha256sum
+</code></pre>
+<p data-sync-block="paragraph-1"><code>mircosoft.exe</code> is the license validator, <code>license.bin</code> is the license it reads, and <code>admin_machine.dmp</code> is a memory dump from the administrator&#39;s machine. The hashes in <code>sha256sum</code> matched the distributed files.</p><p data-sync-block="paragraph-2">I first checked their formats.</p><pre><code class="language-bash">file ./mircosoft.exe ./admin_machine.dmp ./license.bin
+</code></pre>
+<pre><code class="language-text">./mircosoft.exe:     PE32+ executable for MS Windows 6.00 (console), x86-64, 5 sections
+./admin_machine.dmp: Mini DuMP crash report, 5 streams, Thu Jan  1 00:00:00 1970, 0 type
+./license.bin:       data
+</code></pre>
+<p data-sync-block="paragraph-3">Running the validator with the supplied license produced one useful clue.</p><pre><code class="language-bash">./mircosoft.exe
+</code></pre>
+<pre><code class="language-text">License not valid for this hardware.
+</code></pre>
+<p data-sync-block="paragraph-4">The message points to a hardware mismatch. The supplied administrator memory dump is the next clue: it may contain the values from the machine that this license expects.</p><h2 id="en-section-1" data-sync-block="heading-1">1. Unpacking the Real Validator</h2><p data-sync-block="paragraph-5">The file format tells us this is a Windows program. I checked its import information to find the file-reading and hardware-checking calls.</p><pre><code class="language-bash">objdump -p ./mircosoft.exe | grep -E &#39;Import Directory|Import Address Table&#39;
+</code></pre>
+<pre><code class="language-text">Entry 1 0000000000000000 00000000 Import Directory [parts of .idata]
+Entry b 0000000000000000 00000000 Bound Import Directory
+Entry c 0000000000000000 00000000 Import Address Table Directory
+Entry d 0000000000000000 00000000 Delay Import Directory
+</code></pre>
+<p data-sync-block="paragraph-6">The import entries are empty. I saved the disassembly and searched it for indirect calls to see where execution passes to code prepared at runtime.</p><pre><code class="language-bash">objdump -d -M intel --no-show-raw-insn ./mircosoft.exe &gt; outer.asm
+grep -B 5 -A 1 &#39;call   r8&#39; outer.asm
+</code></pre>
+<p data-sync-block="paragraph-7">The relevant part of the output is:</p><pre><code class="language-text">14000224b: mov r8,QWORD PTR [rbp-0x51]
+14000224f: movabs rdx,0xcafe133700005a42
+140002259: add r8,rax
+14000225c: call r8
+</code></pre>
+<p data-sync-block="paragraph-8">The call passes execution to code prepared in memory. I stopped immediately before it and copied the readable pages starting at that code&#39;s base address. The breakpoint offset <code>0x225c</code> comes from the disassembly above.</p><pre><code class="language-gdb"># unpack9.gdb — analysis script (excerpt)
+set pagination off
+handle SIGTRAP nostop noprint nopass
+starti
+python
+import gdb
+s = gdb.execute(&quot;info files&quot;, to_string=True)
+base = int(s.split(&quot; is .text&quot;)[0].splitlines()[-1].strip().split(&quot; - &quot;)[0], 16) - 0x1000
+gdb.execute(&quot;break *0x%x&quot; % (base + 0x225c))
+end
+continue
+python
+base = int(gdb.parse_and_eval(&quot;*(unsigned long long*)($rbp-0x51)&quot;))
+pages = []
+for i in range(32):
+    try: pages.append(bytes(gdb.selected_inferior().read_memory(base+4096*i,4096)))
+    except Exception: break
+open(&quot;inner-memory.bin&quot;, &quot;wb&quot;).write(b&quot;&quot;.join(pages))
+end
+</code></pre>
+<p data-sync-block="paragraph-9">I checked the size of the captured file.</p><pre><code class="language-bash">wc -c inner-memory.bin
+</code></pre>
+<pre><code class="language-text">53248 inner-memory.bin
+</code></pre>
+<p data-sync-block="paragraph-10">I labeled the dump offsets from <code>0x140000000</code> in the disassembly; for example, <code>0x1400023c6</code> below corresponds to dump offset <code>0x23c6</code>.</p><pre><code class="language-bash">objdump -D -b binary -m i386:x86-64 -M intel --no-show-raw-insn \
+  --adjust-vma=0x140000000 inner-memory.bin &gt; inner.asm
+</code></pre>
+<h2 id="en-section-2" data-sync-block="heading-2">2. Understanding the License Check</h2><p data-sync-block="paragraph-11">The supplied license may give us a recognizable value to search for in the validator. I checked its size and first bytes.</p><pre><code class="language-bash">wc -c ./license.bin
+xxd -g 1 -l 32 ./license.bin
+</code></pre>
+<pre><code class="language-text">104 ./license.bin
+00000000: 4d 53 4c 43 01 00 00 00 83 05 d5 d5 c5 31 6f 76  MSLC.........1ov
+00000010: bd 27 dd bb c5 22 1f 56 ed 81 55 33 e4 68 08 6f  .&#39;...&quot;.V..U3.h.o
+</code></pre>
+<p data-sync-block="paragraph-12">The file starts with <code>MSLC</code> and a 32-bit version value of <code>1</code>. I searched the disassembly for the four-byte <code>MSLC</code> value in little-endian order (<code>0x434c534d</code>) and read the surrounding code.</p><pre><code class="language-bash">grep -B 45 -A 16 &#39;0x434c534d&#39; inner.asm
+</code></pre>
+<p data-sync-block="paragraph-13">The relevant lines of that output are:</p><pre><code class="language-text">140002359: mov r8d,0x68
+14000235f: call QWORD PTR [rip+0x2ccb]  # 0x140005030
+1400023c6: cmp DWORD PTR [rbp-0x30],0x434c534d
+1400023d9: cmp DWORD PTR [rbp-0x2c],0x1
+1400023e8: lea r9,[rip+0x3c41]  # 0x140006030
+1400023f4: lea r8,[rip+0x3c25]  # 0x140006020
+1400023fb: call 0x140001df0
+</code></pre>
+<p data-sync-block="paragraph-14">The validator reads the file&#39;s 104 bytes, checks the header and version, then calculates a hardware fingerprint using data at <code>0x140006020</code> and <code>0x140006030</code>. Following the later license accesses gives this layout:</p><table>
+<thead>
+<tr>
+<th>Offset</th>
+<th align="right">Size</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0x00</code></td>
+<td align="right">8</td>
+<td><code>MSLC</code> header and version</td>
+</tr>
+<tr>
+<td><code>0x08</code></td>
+<td align="right">16</td>
+<td>hardware fingerprint</td>
+</tr>
+<tr>
+<td><code>0x18</code></td>
+<td align="right">8</td>
+<td>nonce</td>
+</tr>
+<tr>
+<td><code>0x20</code></td>
+<td align="right">64</td>
+<td>encrypted payload</td>
+</tr>
+<tr>
+<td><code>0x60</code></td>
+<td align="right">8</td>
+<td>integrity tag</td>
+</tr>
+</tbody></table>
+<p data-sync-block="paragraph-15">The fingerprint needs hardware information. I first looked for readable identifiers in the administrator dump.</p><pre><code class="language-bash">strings -a admin_machine.dmp | grep -A 1 &#39;ProcessorBrand:&#39;
+strings -a admin_machine.dmp | grep -E &#39;[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}&#39;
+</code></pre>
+<pre><code class="language-text">ProcessorBrand:
+Intel(R) Core(TM) Ultra 7 155H
+658c05ff-e49e-40aa-b041-9a5f56886dea
+</code></pre>
+<p data-sync-block="paragraph-16">The dump contains a CPU brand and a <code>MachineGuid</code>. The hardware-collection routine also uses a volume serial, SMBIOS Type 1 UUID, and MAC address. The volume label and network-adapter name help locate the two binary records.</p><pre><code class="language-bash">strings -el -t x admin_machine.dmp | grep -F &#39;Windows&#39;
+strings -a -t x admin_machine.dmp | grep -F &#39;Ethernet&#39;
+xxd -g 1 -s 0x9200 -l 32 admin_machine.dmp
+xxd -g 1 -s 0x72c8 -l 160 admin_machine.dmp
+</code></pre>
+<p data-sync-block="paragraph-17">The relevant lines are:</p><pre><code class="language-text">   920a Windows
+   72c8 Intel(R) Ethernet Controller I225-V
+00009200: 91 4c 8d d4 0e 00 00 00 00 00 57 00 69 00 6e 00  .L........W.i.n.
+00009210: 64 00 6f 00 77 00 73 00 00 00 00 00 00 00 00 00  d.o.w.s.........
+000072c8: 49 6e 74 65 6c 28 52 29 20 45 74 68 65 72 6e 65  Intel(R) Etherne
+00007348: 00 00 00 00 06 00 00 00 52 54 00 36 e6 64 00 00  ........RT.6.d..
+00007358: 01 00 00 00 06 00 00 00 01 00 00 00 00 00 00 00  ................
+</code></pre>
+<p data-sync-block="paragraph-18">The volume record places its four-byte serial at <code>0x9200</code>, just before the <code>Windows</code> label. The adapter record contains a six-byte address at <code>0x7350</code>. The SMBIOS Type 1 record begins with type <code>01</code> and length <code>1b</code>; its UUID starts eight bytes into that record. The collection routine joins CPU (48 bytes), volume serial (4), <code>MachineGuid</code> (36), UUID (16), and MAC (6) into a 110-byte buffer. I extracted those fields as follows.</p><pre><code class="language-python"># solve.py — written for this write-up (excerpt)
+from pathlib import Path
+import re
+import struct
+
+dump = Path(&quot;admin_machine.dmp&quot;).read_bytes()
+license_data = Path(&quot;license.bin&quot;).read_bytes()
+
+cpu = dump[dump.index(b&quot;ProcessorBrand:&quot;) + 16:][:48]
+volume_serial = dump[0x9200:0x9204]
+machine_guid = re.search(
+    rb&quot;[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}&quot;, dump
+).group()
+smbios_type1 = dump.index(b&quot;\x01\x1b&quot;)
+system_uuid = dump[smbios_type1 + 8:smbios_type1 + 24]
+mac = dump[0x7350:0x7356]
+
+hardware = cpu + volume_serial + machine_guid + system_uuid + mac
+assert len(hardware) == 110
+</code></pre>
+<pre><code class="language-text">CPU:          Intel(R) Core(TM) Ultra 7 155H
+Volume:       914c8dd4
+MachineGuid:  658c05ff-e49e-40aa-b041-9a5f56886dea
+System UUID:  3c31a857b2b700488ce185385968c8a8
+MAC:          52540036e664
+</code></pre>
+<p data-sync-block="paragraph-19">The recovered fields have the expected sizes and concatenate to 110 bytes. The fingerprint comparison below checks their contents and order.</p><h2 id="en-section-3" data-sync-block="heading-3">3. Recreating the Fingerprint and Key</h2><p data-sync-block="paragraph-20">The fingerprint call above refers to data at <code>0x140006020</code> and <code>0x140006030</code>. In a mapped image, those addresses correspond to dump offsets <code>0x6020</code> and <code>0x6030</code>. I first checked the GDB dump.</p><pre><code class="language-bash">xxd -p -s 0x6000 -l 16 inner-memory.bin
+</code></pre>
+<pre><code class="language-text">cc97f65875384078697972e1bc1c947b
+</code></pre>
+<p data-sync-block="paragraph-21">The first debugger capture has different table bytes. A later capture of the normal check, saved as <code>inner-clean-runtime.bin</code>, contains the values used for the fingerprint and key. I read the four adjacent 16-byte tables from that capture.</p><pre><code class="language-bash">xxd -g 1 -s 0x6000 -l 64 inner-clean-runtime.bin
+</code></pre>
+<pre><code class="language-text">00006000: 67 e6 09 6a 85 ae 67 bb 72 f3 6e 3c 3a f5 4f a5
+00006010: 7f 52 0e 51 8c 68 05 9b ab d9 83 1f 19 cd e0 5b
+00006020: 98 2f 8a 42 91 44 37 71 cf fb c0 b5 a5 db b5 e9
+00006030: 5b c2 56 39 f1 11 f1 59 a4 82 3f 92 d5 5e 1c ab
+</code></pre>
+<p data-sync-block="paragraph-22">The last two tables correspond to the two addresses in the fingerprint call. The first two are used by the license-key path. I translated the inner program&#39;s 32-round TEA-like update function into <code>tea</code> and <code>update</code> helpers. The excerpt below shows how the hardware and the four tables are passed to those helpers.</p><pre><code class="language-python"># solve.py — written for this write-up (core excerpt)
+TABLES = Path(&quot;inner-clean-runtime.bin&quot;).read_bytes()[0x6000:0x6040]
+MASK = 0xffffffff
+
+fingerprint = struct.pack(&quot;&lt;4I&quot;, *update(
+    (0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476),
+    hardware, TABLES[32:48], TABLES[48:64],
+))
+assert fingerprint == license_data[8:24]
+
+state = (0, 0, 0, 0)
+for part in (cpu, volume_serial + machine_guid, system_uuid + mac):
+    state = update(state, part, TABLES[:16], TABLES[16:32])
+
+a, b, c, d = state
+rol7 = lambda value: ((value &lt;&lt; 7) | (value &gt;&gt; 25)) &amp; MASK
+a = ((rol7(a) ^ b) + c) &amp; MASK
+b = ((rol7(b) ^ c) + d) &amp; MASK
+c = ((rol7(c) ^ d) + a) &amp; MASK
+d = ((rol7(d) ^ a) + b) &amp; MASK
+key = struct.pack(&quot;&lt;4I&quot;, a, b, c, d)
+</code></pre>
+<p data-sync-block="paragraph-23">The full 110-byte hardware buffer produces the fingerprint stored in <code>license.bin[8:24]</code>. That exact match confirms the recovered values and their order. The key path processes the hardware in three groups—CPU, volume plus <code>MachineGuid</code>, and UUID plus MAC—and applies the final mixing step shown above. The resulting key is <code>3b8652afcde7de87294a383867f1a9f7</code>.</p><h2 id="en-section-4" data-sync-block="heading-4">4. Verifying and Decrypting the License</h2><p data-sync-block="paragraph-24">I used the recovered key to check the integrity tag and decrypt the payload.</p><pre><code class="language-python"># solve.py — written for this write-up (continued)
+x = y = 0
+for offset in range(0, 96, 8):
+    p, q = struct.unpack_from(&quot;&lt;2I&quot;, license_data, offset)
+    x, y = tea(x ^ p, y ^ q, key)
+x, y = tea(x, y, key)
+assert struct.pack(&quot;&lt;2I&quot;, x, y) == license_data[96:104]
+
+nonce0, nonce1 = struct.unpack_from(&quot;&lt;2I&quot;, license_data, 24)
+plain = bytearray()
+for counter in range(8):
+    stream = struct.pack(
+        &quot;&lt;2I&quot;, *tea((nonce0 + counter) &amp; MASK, nonce1, key)
+    )
+    block = license_data[32 + counter * 8:40 + counter * 8]
+    plain.extend(left ^ right for left, right in zip(block, stream))
+
+flag = plain.rstrip(b&quot;\0&quot;).decode()
+print(&quot;fingerprint:&quot;, fingerprint.hex())
+print(&quot;key:&quot;, key.hex())
+print(&quot;flag:&quot;, flag)
+</code></pre>
+<pre><code class="language-text">fingerprint: 8305d5d5c5316f76bd27ddbbc5221f56
+key: 3b8652afcde7de87294a383867f1a9f7
+flag: gctf{m3m0ry_dump_DRM_c3rt_f0rg3d_7b2e}
+</code></pre>
+<p data-sync-block="paragraph-25">The fingerprint matches the 16 bytes stored in the license, and the calculated integrity tag matches its final eight bytes. The 64-byte payload then decrypts to the flag shown above. The original program rejects the current PC because its hardware differs from the administrator&#39;s.</p><h2 id="en-section-5" data-sync-block="heading-5">Final Flag</h2><pre><code class="language-text">gctf{m3m0ry_dump_DRM_c3rt_f0rg3d_7b2e}
+</code></pre>
+<h2 id="en-section-6" data-sync-block="heading-6">Summary</h2><section class="writeup-summary" aria-labelledby="en-section-6"><ul>
+<li>The visible executable prepared the license-checking code in memory and transferred execution to it.</li>
+<li>The administrator&#39;s memory dump contained the five hardware values bound to <code>license.bin</code>.</li>
+<li>Recreating the stored fingerprint confirmed the extracted values. The resulting key also produced the correct integrity tag before decrypting the flag.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="en-flow-0"><div class="flow-title" id="en-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">Run the supplied validator</span></li><li><span class="flow-node">Unpack the inner license checker</span></li><li><span class="flow-node">Recover the registered hardware from the memory dump</span></li><li><span class="flow-node">Recreate the fingerprint and encryption key</span></li><li><span class="flow-node">Verify the integrity tag</span></li><li><span class="flow-node">Decrypt the license payload</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../">← Rev write ups</a></div></article><article class="prose" lang="ko" data-writeup-language="ko" hidden><h2 id="ko-section-0" data-sync-block="heading-0">문제에서 출발하기</h2><p data-sync-block="paragraph-0">Windows 11 Version 10.0.26100에서 테스트된 문제다. <code>mircosoft.tar.gz</code>를 풀면 파일 네 개가 나온다.</p><pre><code class="language-text">mircosoft/
+├── admin_machine.dmp
+├── license.bin
+├── mircosoft.exe
+└── sha256sum
+</code></pre>
+<p data-sync-block="paragraph-1"><code>mircosoft.exe</code>는 라이선스 검사 프로그램, <code>license.bin</code>은 프로그램이 읽는 라이선스, <code>admin_machine.dmp</code>는 관리자의 PC에서 가져온 메모리 덤프다. <code>sha256sum</code>에 적힌 해시는 배포된 파일과 일치했다.</p><p data-sync-block="paragraph-2">먼저 각 파일의 형식을 확인했다.</p><pre><code class="language-bash">file ./mircosoft.exe ./admin_machine.dmp ./license.bin
+</code></pre>
+<pre><code class="language-text">./mircosoft.exe:     PE32+ executable for MS Windows 6.00 (console), x86-64, 5 sections
+./admin_machine.dmp: Mini DuMP crash report, 5 streams, Thu Jan  1 00:00:00 1970, 0 type
+./license.bin:       data
+</code></pre>
+<p data-sync-block="paragraph-3">제공된 라이선스와 함께 프로그램을 실행하자 단서가 하나 나왔다.</p><pre><code class="language-bash">./mircosoft.exe
+</code></pre>
+<pre><code class="language-text">License not valid for this hardware.
+</code></pre>
+<p data-sync-block="paragraph-4">출력은 현재 PC의 하드웨어가 라이선스와 맞지 않는다고 알려 준다. 함께 제공된 관리자 메모리 덤프에서 라이선스가 요구하는 PC의 값을 찾을 수 있는지 살펴봤다.</p><h2 id="ko-section-1" data-sync-block="heading-1">1. 실제 검증 코드 꺼내기</h2><p data-sync-block="paragraph-5">파일 형식에서 Windows 프로그램임을 확인했다. 파일 읽기와 하드웨어 검사 함수를 찾기 위해 임포트 정보를 확인했다.</p><pre><code class="language-bash">objdump -p ./mircosoft.exe | grep -E &#39;Import Directory|Import Address Table&#39;
+</code></pre>
+<pre><code class="language-text">Entry 1 0000000000000000 00000000 Import Directory [parts of .idata]
+Entry b 0000000000000000 00000000 Bound Import Directory
+Entry c 0000000000000000 00000000 Import Address Table Directory
+Entry d 0000000000000000 00000000 Delay Import Directory
+</code></pre>
+<p data-sync-block="paragraph-6">임포트 항목이 비어 있다. 실행 중 준비된 코드로 넘어가는 지점을 찾기 위해 디스어셈블 결과를 저장하고 간접 호출의 주변을 살폈다.</p><pre><code class="language-bash">objdump -d -M intel --no-show-raw-insn ./mircosoft.exe &gt; outer.asm
+grep -B 5 -A 1 &#39;call   r8&#39; outer.asm
+</code></pre>
+<p data-sync-block="paragraph-7">출력 중 관련 부분은 다음과 같다.</p><pre><code class="language-text">14000224b: mov r8,QWORD PTR [rbp-0x51]
+14000224f: movabs rdx,0xcafe133700005a42
+140002259: add r8,rax
+14000225c: call r8
+</code></pre>
+<p data-sync-block="paragraph-8">메모리에 준비된 코드로 실행을 넘기는 지점이다. 이 호출 직전에 멈춰 해당 코드의 시작 주소부터 읽을 수 있는 페이지를 복사했다. 브레이크포인트 오프셋 <code>0x225c</code>는 위 출력에서 얻었다.</p><pre><code class="language-gdb"># unpack9.gdb — analysis script (excerpt)
+set pagination off
+handle SIGTRAP nostop noprint nopass
+starti
+python
+import gdb
+s = gdb.execute(&quot;info files&quot;, to_string=True)
+base = int(s.split(&quot; is .text&quot;)[0].splitlines()[-1].strip().split(&quot; - &quot;)[0], 16) - 0x1000
+gdb.execute(&quot;break *0x%x&quot; % (base + 0x225c))
+end
+continue
+python
+base = int(gdb.parse_and_eval(&quot;*(unsigned long long*)($rbp-0x51)&quot;))
+pages = []
+for i in range(32):
+    try: pages.append(bytes(gdb.selected_inferior().read_memory(base+4096*i,4096)))
+    except Exception: break
+open(&quot;inner-memory.bin&quot;, &quot;wb&quot;).write(b&quot;&quot;.join(pages))
+end
+</code></pre>
+<p data-sync-block="paragraph-9">캡처한 파일의 크기를 확인했다.</p><pre><code class="language-bash">wc -c inner-memory.bin
+</code></pre>
+<pre><code class="language-text">53248 inner-memory.bin
+</code></pre>
+<p data-sync-block="paragraph-10">디스어셈블 결과에 <code>0x140000000</code>을 기준 주소로 붙였다. 아래의 <code>0x1400023c6</code>은 덤프 파일에서 오프셋 <code>0x23c6</code>에 해당한다.</p><pre><code class="language-bash">objdump -D -b binary -m i386:x86-64 -M intel --no-show-raw-insn \
+  --adjust-vma=0x140000000 inner-memory.bin &gt; inner.asm
+</code></pre>
+<h2 id="ko-section-2" data-sync-block="heading-2">2. 라이선스가 확인하는 값</h2><p data-sync-block="paragraph-11">제공된 라이선스 파일에서 검증 코드를 찾을 만한 값을 먼저 확인했다. 파일의 길이와 첫 바이트를 살폈다.</p><pre><code class="language-bash">wc -c ./license.bin
+xxd -g 1 -l 32 ./license.bin
+</code></pre>
+<pre><code class="language-text">104 ./license.bin
+00000000: 4d 53 4c 43 01 00 00 00 83 05 d5 d5 c5 31 6f 76  MSLC.........1ov
+00000010: bd 27 dd bb c5 22 1f 56 ed 81 55 33 e4 68 08 6f  .&#39;...&quot;.V..U3.h.o
+</code></pre>
+<p data-sync-block="paragraph-12">파일은 <code>MSLC</code>와 32비트 버전 값 <code>1</code>로 시작한다. 이 네 글자를 리틀 엔디언 값 <code>0x434c534d</code>로 바꿔 디스어셈블 결과에서 검색하고 주변을 펼쳤다.</p><pre><code class="language-bash">grep -B 45 -A 16 &#39;0x434c534d&#39; inner.asm
+</code></pre>
+<p data-sync-block="paragraph-13">출력 중 관련 줄은 다음과 같다.</p><pre><code class="language-text">140002359: mov r8d,0x68
+14000235f: call QWORD PTR [rip+0x2ccb]  # 0x140005030
+1400023c6: cmp DWORD PTR [rbp-0x30],0x434c534d
+1400023d9: cmp DWORD PTR [rbp-0x2c],0x1
+1400023e8: lea r9,[rip+0x3c41]  # 0x140006030
+1400023f4: lea r8,[rip+0x3c25]  # 0x140006020
+1400023fb: call 0x140001df0
+</code></pre>
+<p data-sync-block="paragraph-14">검증기는 파일의 104바이트를 읽고 헤더와 버전을 확인한 뒤, <code>0x140006020</code>과 <code>0x140006030</code>의 데이터를 사용해 하드웨어 지문을 계산한다. 이후의 라이선스 필드 접근까지 따라가면 구조를 다음처럼 나눌 수 있다.</p><table>
+<thead>
+<tr>
+<th>오프셋</th>
+<th align="right">크기</th>
+<th>용도</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0x00</code></td>
+<td align="right">8</td>
+<td><code>MSLC</code> 헤더와 버전</td>
+</tr>
+<tr>
+<td><code>0x08</code></td>
+<td align="right">16</td>
+<td>하드웨어 지문</td>
+</tr>
+<tr>
+<td><code>0x18</code></td>
+<td align="right">8</td>
+<td>nonce</td>
+</tr>
+<tr>
+<td><code>0x20</code></td>
+<td align="right">64</td>
+<td>암호화된 데이터</td>
+</tr>
+<tr>
+<td><code>0x60</code></td>
+<td align="right">8</td>
+<td>무결성 태그</td>
+</tr>
+</tbody></table>
+<p data-sync-block="paragraph-15">지문을 계산하려면 하드웨어 정보가 필요하다. 먼저 관리자 덤프에서 읽을 수 있는 식별값을 찾았다.</p><pre><code class="language-bash">strings -a admin_machine.dmp | grep -A 1 &#39;ProcessorBrand:&#39;
+strings -a admin_machine.dmp | grep -E &#39;[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}&#39;
+</code></pre>
+<pre><code class="language-text">ProcessorBrand:
+Intel(R) Core(TM) Ultra 7 155H
+658c05ff-e49e-40aa-b041-9a5f56886dea
+</code></pre>
+<p data-sync-block="paragraph-16">덤프에 CPU 이름과 <code>MachineGuid</code>가 남아 있다. 하드웨어 수집 함수는 볼륨 시리얼, SMBIOS Type 1 UUID, MAC 주소도 사용한다. 볼륨 이름과 네트워크 어댑터 이름을 단서로 바이너리 값이 들어 있는 기록을 찾았다.</p><pre><code class="language-bash">strings -el -t x admin_machine.dmp | grep -F &#39;Windows&#39;
+strings -a -t x admin_machine.dmp | grep -F &#39;Ethernet&#39;
+xxd -g 1 -s 0x9200 -l 32 admin_machine.dmp
+xxd -g 1 -s 0x72c8 -l 160 admin_machine.dmp
+</code></pre>
+<p data-sync-block="paragraph-17">관련 출력은 다음과 같다.</p><pre><code class="language-text">   920a Windows
+   72c8 Intel(R) Ethernet Controller I225-V
+00009200: 91 4c 8d d4 0e 00 00 00 00 00 57 00 69 00 6e 00  .L........W.i.n.
+00009210: 64 00 6f 00 77 00 73 00 00 00 00 00 00 00 00 00  d.o.w.s.........
+000072c8: 49 6e 74 65 6c 28 52 29 20 45 74 68 65 72 6e 65  Intel(R) Etherne
+00007348: 00 00 00 00 06 00 00 00 52 54 00 36 e6 64 00 00  ........RT.6.d..
+00007358: 01 00 00 00 06 00 00 00 01 00 00 00 00 00 00 00  ................
+</code></pre>
+<p data-sync-block="paragraph-18">볼륨 기록에서는 <code>Windows</code> 이름 바로 앞 <code>0x9200</code>에 4바이트 시리얼이 있다. 어댑터 기록의 <code>0x7350</code>에는 6바이트 주소가 들어 있다. SMBIOS Type 1 기록은 유형 <code>01</code>, 길이 <code>1b</code>로 시작하며 UUID는 기록 시작점에서 8바이트 뒤에 있다. 하드웨어 수집 함수는 CPU 이름(48바이트), 볼륨 시리얼(4), <code>MachineGuid</code>(36), UUID(16), MAC(6)을 순서대로 이어 110바이트를 만든다. 덤프에서 해당 필드를 추출했다.</p><pre><code class="language-python"># solve.py — written for this write-up (excerpt)
+from pathlib import Path
+import re
+import struct
+
+dump = Path(&quot;admin_machine.dmp&quot;).read_bytes()
+license_data = Path(&quot;license.bin&quot;).read_bytes()
+
+cpu = dump[dump.index(b&quot;ProcessorBrand:&quot;) + 16:][:48]
+volume_serial = dump[0x9200:0x9204]
+machine_guid = re.search(
+    rb&quot;[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}&quot;, dump
+).group()
+smbios_type1 = dump.index(b&quot;\x01\x1b&quot;)
+system_uuid = dump[smbios_type1 + 8:smbios_type1 + 24]
+mac = dump[0x7350:0x7356]
+
+hardware = cpu + volume_serial + machine_guid + system_uuid + mac
+assert len(hardware) == 110
+</code></pre>
+<pre><code class="language-text">CPU:          Intel(R) Core(TM) Ultra 7 155H
+Volume:       914c8dd4
+MachineGuid:  658c05ff-e49e-40aa-b041-9a5f56886dea
+System UUID:  3c31a857b2b700488ce185385968c8a8
+MAC:          52540036e664
+</code></pre>
+<p data-sync-block="paragraph-19">각 필드의 길이를 합치면 110바이트다. 아래의 지문 비교로 값과 결합 순서를 확인한다.</p><h2 id="ko-section-3" data-sync-block="heading-3">3. 하드웨어 지문과 키 다시 만들기</h2><p data-sync-block="paragraph-20">앞서 본 지문 계산 호출은 <code>0x140006020</code>과 <code>0x140006030</code>의 데이터를 참조한다. 메모리에 배치한 이미지에서 이 주소들은 덤프 파일의 <code>0x6020</code>과 <code>0x6030</code> 오프셋이다. 먼저 GDB 덤프의 값을 살폈다.</p><pre><code class="language-bash">xxd -p -s 0x6000 -l 16 inner-memory.bin
+</code></pre>
+<pre><code class="language-text">cc97f65875384078697972e1bc1c947b
+</code></pre>
+<p data-sync-block="paragraph-21">첫 디버거 캡처와 정상 검사 때의 표 바이트는 다르다. 분석 중 정상 검사 경로에서 캡처한 <code>inner-clean-runtime.bin</code>에서 지문과 키 계산에 쓰인 값을 확인했다. 연속된 16바이트 표 네 개를 읽었다.</p><pre><code class="language-bash">xxd -g 1 -s 0x6000 -l 64 inner-clean-runtime.bin
+</code></pre>
+<pre><code class="language-text">00006000: 67 e6 09 6a 85 ae 67 bb 72 f3 6e 3c 3a f5 4f a5
+00006010: 7f 52 0e 51 8c 68 05 9b ab d9 83 1f 19 cd e0 5b
+00006020: 98 2f 8a 42 91 44 37 71 cf fb c0 b5 a5 db b5 e9
+00006030: 5b c2 56 39 f1 11 f1 59 a4 82 3f 92 d5 5e 1c ab
+</code></pre>
+<p data-sync-block="paragraph-22">뒤쪽 표 두 개는 앞서 본 지문 계산 호출에 연결된다. 앞쪽 두 개는 라이선스 키를 만드는 경로에서 사용한다. 내부 프로그램의 32라운드 TEA 계열 상태 갱신 함수를 <code>tea</code>와 <code>update</code>로 옮겼다. 아래에는 하드웨어 값과 표 네 개를 두 함수에 전달하는 핵심 부분을 남겼다.</p><pre><code class="language-python"># solve.py — written for this write-up (core excerpt)
+TABLES = Path(&quot;inner-clean-runtime.bin&quot;).read_bytes()[0x6000:0x6040]
+MASK = 0xffffffff
+
+fingerprint = struct.pack(&quot;&lt;4I&quot;, *update(
+    (0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476),
+    hardware, TABLES[32:48], TABLES[48:64],
+))
+assert fingerprint == license_data[8:24]
+
+state = (0, 0, 0, 0)
+for part in (cpu, volume_serial + machine_guid, system_uuid + mac):
+    state = update(state, part, TABLES[:16], TABLES[16:32])
+
+a, b, c, d = state
+rol7 = lambda value: ((value &lt;&lt; 7) | (value &gt;&gt; 25)) &amp; MASK
+a = ((rol7(a) ^ b) + c) &amp; MASK
+b = ((rol7(b) ^ c) + d) &amp; MASK
+c = ((rol7(c) ^ d) + a) &amp; MASK
+d = ((rol7(d) ^ a) + b) &amp; MASK
+key = struct.pack(&quot;&lt;4I&quot;, a, b, c, d)
+</code></pre>
+<p data-sync-block="paragraph-23">110바이트 하드웨어 전체로 계산한 지문은 <code>license.bin[8:24]</code>와 일치했다. 이 일치로 덤프에서 복원한 값과 결합 순서를 확인했다. 키 생성 경로는 CPU, 볼륨 시리얼과 <code>MachineGuid</code>, UUID와 MAC의 세 묶음을 차례로 처리하고 마지막 혼합 연산을 적용한다. 그 결과 키는 <code>3b8652afcde7de87294a383867f1a9f7</code>이다.</p><h2 id="ko-section-4" data-sync-block="heading-4">4. 라이선스 검증하고 복호화하기</h2><p data-sync-block="paragraph-24">복원한 키로 무결성 태그를 확인하고 암호화된 데이터를 복호화했다.</p><pre><code class="language-python"># solve.py — written for this write-up (continued)
+x = y = 0
+for offset in range(0, 96, 8):
+    p, q = struct.unpack_from(&quot;&lt;2I&quot;, license_data, offset)
+    x, y = tea(x ^ p, y ^ q, key)
+x, y = tea(x, y, key)
+assert struct.pack(&quot;&lt;2I&quot;, x, y) == license_data[96:104]
+
+nonce0, nonce1 = struct.unpack_from(&quot;&lt;2I&quot;, license_data, 24)
+plain = bytearray()
+for counter in range(8):
+    stream = struct.pack(
+        &quot;&lt;2I&quot;, *tea((nonce0 + counter) &amp; MASK, nonce1, key)
+    )
+    block = license_data[32 + counter * 8:40 + counter * 8]
+    plain.extend(left ^ right for left, right in zip(block, stream))
+
+flag = plain.rstrip(b&quot;\0&quot;).decode()
+print(&quot;fingerprint:&quot;, fingerprint.hex())
+print(&quot;key:&quot;, key.hex())
+print(&quot;flag:&quot;, flag)
+</code></pre>
+<pre><code class="language-text">fingerprint: 8305d5d5c5316f76bd27ddbbc5221f56
+key: 3b8652afcde7de87294a383867f1a9f7
+flag: gctf{m3m0ry_dump_DRM_c3rt_f0rg3d_7b2e}
+</code></pre>
+<p data-sync-block="paragraph-25">지문은 라이선스에 저장된 16바이트와 일치했고, 계산한 무결성 태그도 마지막 8바이트와 일치했다. 이어 64바이트 암호문에서 위 플래그가 나왔다. 현재 PC는 관리자 PC와 하드웨어 값이 달라 원본 프로그램에서 거부된다.</p><h2 id="ko-section-5" data-sync-block="heading-5">Final Flag</h2><pre><code class="language-text">gctf{m3m0ry_dump_DRM_c3rt_f0rg3d_7b2e}
+</code></pre>
+<h2 id="ko-section-6" data-sync-block="heading-6">요약</h2><section class="writeup-summary" aria-labelledby="ko-section-6"><ul>
+<li>겉의 실행 파일은 라이선스 검사 코드를 메모리에 준비한 뒤 그쪽으로 실행을 넘겼다.</li>
+<li>관리자 메모리 덤프에는 <code>license.bin</code>에 묶인 하드웨어 값 다섯 개가 남아 있었다.</li>
+<li>저장된 지문과 무결성 태그를 차례로 통과하는 것을 확인한 뒤 라이선스 데이터를 복호화했다.</li>
+</ul>
+<div class="tactical-flow" data-sync-block="flow-0" role="group" aria-labelledby="ko-flow-0"><div class="flow-title" id="ko-flow-0">TACTICAL FLOW MAP</div><ol class="flow-steps"><li><span class="flow-node">제공된 검증기 실행</span></li><li><span class="flow-node">내부 라이선스 검사기 덤프</span></li><li><span class="flow-node">메모리 덤프에서 등록된 하드웨어 복원</span></li><li><span class="flow-node">하드웨어 지문과 암호화 키 재계산</span></li><li><span class="flow-node">무결성 태그 확인</span></li><li><span class="flow-node">라이선스 데이터 복호화</span></li></ol></div></section><div class="article-end"><span>// END OF WRITE UP</span><a href="../">← Rev write ups</a></div></article></section></div><aside class="toc"><span class="eyebrow">ON THIS PAGE</span><a href="#challenge">Challenge</a><a href="#write-up">Write Up</a><a data-toc-language="en" href="#en-section-0">Starting from the Challenge</a><a data-toc-language="en" href="#en-section-1">1. Unpacking the Real Validator</a><a data-toc-language="en" href="#en-section-2">2. Understanding the License Check</a><a data-toc-language="en" href="#en-section-3">3. Recreating the Fingerprint and Key</a><a data-toc-language="en" href="#en-section-4">4. Verifying and Decrypting the License</a><a data-toc-language="en" href="#en-section-5">Final Flag</a><a data-toc-language="en" href="#en-section-6">Summary</a><a data-toc-language="ko" href="#ko-section-0" hidden>문제에서 출발하기</a><a data-toc-language="ko" href="#ko-section-1" hidden>1. 실제 검증 코드 꺼내기</a><a data-toc-language="ko" href="#ko-section-2" hidden>2. 라이선스가 확인하는 값</a><a data-toc-language="ko" href="#ko-section-3" hidden>3. 하드웨어 지문과 키 다시 만들기</a><a data-toc-language="ko" href="#ko-section-4" hidden>4. 라이선스 검증하고 복호화하기</a><a data-toc-language="ko" href="#ko-section-5" hidden>Final Flag</a><a data-toc-language="ko" href="#ko-section-6" hidden>요약</a><a class="toc-back" href="../">← Back to list</a></aside></div></main><footer><span>WRITE UPS</span><span>Glacier CTF · 2026</span></footer></body></html>

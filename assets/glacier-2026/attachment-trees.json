@@ -6,4 +6,14 @@
       {"path": "flagchecker/sha256sum", "folder": false}
     ]
   }
+,
+  "mircosoft": {
+    "mircosoft.tar.gz": [
+      {"path": "mircosoft", "folder": true},
+      {"path": "mircosoft/admin_machine.dmp", "folder": false},
+      {"path": "mircosoft/license.bin", "folder": false},
+      {"path": "mircosoft/mircosoft.exe", "folder": false},
+      {"path": "mircosoft/sha256sum", "folder": false}
+    ]
+  }
 }
