@@ -105,7 +105,7 @@ header .nav nav{margin-left:auto}
 .site-home-hero h1 span{color:var(--cyan)}
 .site-home-hero .home-subtitle{margin:0;color:var(--muted);font:14px var(--mono);letter-spacing:.3px}
 .site-home-hero .terminal{transform:none}
-.home-events{padding-top:32px}
+.home-events{padding-top:32px;scroll-margin-top:100px}
 .event-row{display:flex;align-items:center;gap:28px;padding:22px 20px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);transition:background .2s,color .2s}
 .event-row:hover{background:#111a20;color:var(--cyan)}
 .event-index,.event-row-meta,.event-row-arrow{font-family:var(--mono);color:var(--cyan)}
@@ -141,6 +141,7 @@ body:after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;back
 .site-home-hero .dots i:nth-child(3){background:#28c840}
 .site-home-hero .terminal-content{padding:25px 30px 28px}
 .site-home-hero .terminal-section-title{margin:0 0 12px;color:var(--ink);font-weight:700}
+.site-home-hero .terminal-participants{color:var(--cyan);white-space:nowrap}
 .site-home-hero .terminal-events{display:grid;gap:17px}
 .site-home-hero .terminal-event p{margin:0}
 .site-home-hero .terminal-event .terminal-folder{font-size:15px;line-height:1.55;overflow-wrap:anywhere}
@@ -148,9 +149,9 @@ body:after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;back
 .site-home-hero .terminal-event p:last-child{color:#aebac4}
 @media(max-width:640px){.site-home-hero .terminal-content{padding:20px 18px}.site-home-hero .terminal-event .terminal-folder{font-size:13px}}
 .init-home-action{margin:32px 0 0}
-.site-home-hero [data-boot-rest]{transition:opacity .35s ease}
+.site-home-hero [data-boot-rest]{transition:opacity .1s ease}
 .site-home-hero .terminal-animating [data-boot-rest]{opacity:0;visibility:hidden}.site-home-hero .terminal-content [data-boot-line]{min-height:1.8em}.site-home-hero .terminal-content p[data-boot-line] .event-count{float:none;color:var(--green)}
-.site-home-hero [data-boot-line].typing::after{content:'▌';color:var(--cyan);animation:boot-cursor .7s steps(1) infinite}
+.site-home-hero .typing::after{content:'▌';color:var(--cyan);animation:boot-cursor .7s steps(1) infinite}
 .category-search{justify-content:flex-end;margin:-24px 0 34px}
 .category-search .search{width:min(100%,320px)}
 .category-search .search input{flex:1;width:auto}

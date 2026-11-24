@@ -54,20 +54,46 @@ const archiveTerminal=document.querySelector('.site-home-hero .terminal');
 if(archiveTerminal&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
  const lines=[...archiveTerminal.querySelectorAll('[data-boot-line]')];
  const originals=lines.map(line=>({html:line.innerHTML,text:line.textContent}));
+ const participants=archiveTerminal.querySelector('.terminal-participants');
+ const participantsText=participants.textContent;
  archiveTerminal.classList.add('terminal-animating');
  lines.forEach(line=>line.textContent='');
+ participants.textContent='';
  const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+ let complete=false;
+ const finish=()=>{
+  if(complete)return;
+  complete=true;
+  lines.forEach((line,i)=>{line.innerHTML=originals[i].html;line.classList.remove('typing')});
+  archiveTerminal.classList.remove('terminal-animating');
+  (async()=>{
+   participants.classList.add('typing');
+   for(const character of participantsText){
+    await pause(25);
+    participants.textContent+=character;
+   }
+   participants.classList.remove('typing');
+   setTimeout(()=>document.querySelector('.home-events')?.scrollIntoView({behavior:'smooth',block:'start'}),400);
+  })();
+ };
+ const deadline=setTimeout(finish,2500);
  (async()=>{
-  await pause(300);
+  await pause(100);
   for(let i=0;i<lines.length;i++){
+   if(complete)return;
    const line=lines[i];
    line.classList.add('typing');
-   for(const character of originals[i].text){line.textContent+=character;await pause(24);}
+   for(const character of originals[i].text){
+    if(complete)return;
+    line.textContent+=character;
+    await pause(25);
+   }
    line.innerHTML=originals[i].html;
    line.classList.remove('typing');
-   await pause(230);
+   await pause(70);
   }
-  archiveTerminal.classList.remove('terminal-animating');
+  clearTimeout(deadline);
+  finish();
  })();
 }
 document.querySelectorAll('.prose pre').forEach(pre=>{
